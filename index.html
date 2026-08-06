@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>部品採用シミュレーター | 新品 vs リユース</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-main: #f8fafc;
+        --card-bg: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --primary-light: #eff6ff;
+        --new-color: #0284c7;
+        --new-bg: #f0f9ff;
+        --reuse-color: #059669;
+        --reuse-bg: #ecfdf5;
+        --border-color: #e2e8f0;
+        --radius-lg: 12px;
+        --radius-md: 8px;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--text-primary);
+        background-color: var(--bg-main);
+        margin: 0;
+        padding: 32px 16px;
+        line-height: 1.5;
+    }
+
+    .container {
+        max-width: 1080px;
+        margin: 0 auto;
+    }
+
+    /* ヘッダー */
+    header {
+        margin-bottom: 32px;
+        text-align: center;
+    }
+    header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.02em;
+    }
+    header p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* カードコンテナ */
+    .card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+        transition: box-shadow 0.2s ease;
+    }
+    .card:hover {
+        box-shadow: var(--shadow-md);
+    }
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* フォームエレメント */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .form-group label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    input[type="text"], input[type="number"], select {
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: var(--text-primary);
+        background-color: #fff;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* ボタン */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 18px;
+        border-radius: var(--radius-md);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+    .btn-outline:hover {
+        background-color: #f1f5f9;
+        color: var(--text-primary);
+    }
+    .btn-danger {
+        background-color: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fee2e2;
+    }
+    .btn-danger:hover {
+        background-color: #fee2e2;
+    }
+
+    /* 親品番コントロールバー */
+    .parent-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr 100px auto auto;
+        gap: 16px;
+        align-items: end;
+    }
+    @media (max-width: 800px) {
+        .parent-controls { grid-template-columns: 1fr; }
+    }
+
+    /* テーブルデザイン */
+    .table-container {
+        overflow-x: auto;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+    th {
+        background-color: #f8fafc;
+        padding: 12px 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.82rem;
+    }
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: #fff;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background-color: #f8fafc; }
+
+    /* カラム区切りカラー */
+    .col-new { background-color: var(--new-bg) !important; }
+    .col-reuse { background-color: var(--reuse-bg) !important; }
+    th.col-new-header { color: var(--new-color); background-color: #e0f2fe; }
+    th.col-reuse-header { color: var(--reuse-color); background-color: #d1fae5; }
+
+    /* ミニ入力フォーム */
+    .input-sm {
+        width: 100%;
+        min-width: 80px;
+        padding: 6px 8px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* サマリーカード */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    @media (max-width: 768px) {
+        .summary-grid { grid-template-columns: 1fr; }
+    }
+    .summary-box {
+        background: #f8fafc;
+        border-radius: var(--radius-md);
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        position: relative;
+    }
+    .summary-box.highlight {
+        background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+        border-color: #bfdbfe;
+    }
+    .summary-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+    }
+    .summary-sub {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    .badge-diff {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .badge-savings { background-color: #dcfce7; color: #15803d; }
+    .badge-costup { background-color: #fee2e2; color: #b91c1c; }
+
+    /* トグルボタン風セレクト */
+    .select-choice {
+        font-weight: 600;
+    }
+    .select-choice option[value="new"] { color: var(--new-color); }
+    .select-choice option[value="reuse"] { color: var(--reuse-color); }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>⚡ 部品採用シミュレーター</h1>
+        <p>親製品の構成部品ごとに新品・リユースを自由に組み合わせてトータルコストを試算</p>
+    </header>
+
+    <!-- 1. 親品番設定 -->
+    <div class="card">
+        <div class="card-title">📦 対象製品（親品番）の設定</div>
+        <div class="parent-controls">
+            <div class="form-group">
+                <label>対象製品を選択</label>
+                <select id="parent-select" onchange="switchParent()"></select>
+            </div>
+            <div class="form-group">
+                <label>製品名 / 品番</label>
+                <input type="text" id="parent-name-input" placeholder="例: PRD-2026-X">
+            </div>
+            <div class="form-group">
+                <label>想定運用年数</label>
+                <input type="number" id="parent-years-input" value="3" min="1" placeholder="年">
+            </div>
+            <button class="btn btn-primary" onclick="saveParentName()">保存 / 更新</button>
+            <button class="btn btn-danger" onclick="deleteParent()">削除</button>
+        </div>
+    </div>
+
+    <!-- 2. 子部品リスト -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="card-title" style="margin: 0;">🧩 構成部品（子部品）一覧</div>
+            <button class="btn btn-primary" onclick="addPartRow()">＋ 部品を追加</button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">部品名</th>
+                        <th class="col-new-header" style="width: 15%;">新品 初期費</th>
+                        <th class="col-new-header" style="width: 15%;">新品 年維持費</th>
+                        <th class="col-reuse-header" style="width: 15%;">リユース 初期費</th>
+                        <th class="col-reuse-header" style="width: 15%;">リユース 年維持費</th>
+                        <th style="width: 120px;">採用タイプ</th>
+                        <th style="width: 60px; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="parts-tbody">
+                    <!-- JS動的レンダリング -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. コスト比較サマリー -->
+    <div class="card">
+        <div class="card-title">📊 シミュレーション比較結果 <span id="summary-title-badge" style="font-size:0.85rem; font-weight:normal; color:var(--text-secondary);"></span></div>
+        
+        <div class="summary-grid">
+            <div class="summary-box">
+                <div class="summary-label">オール新品プラン</div>
+                <div class="summary-value" id="total-all-new">¥0</div>
+                <div class="summary-sub" id="annual-all-new">（1年あたり: ¥0）</div>
+            </div>
+            <div class="summary-box">
+                <div class="summary-label">オールリユースプラン</div>
+                <div class="summary-value" id="total-all-reuse">¥0</div>
+                <div class="summary-sub" id="annual-all-reuse">（1年あたり: ¥0）</div>
+            </div>
+            <div class="summary-box highlight">
+                <div class="summary-label" style="color:var(--primary);">🎯 選択中の組み合わせプラン</div>
+                <div class="summary-value" id="total-selected" style="color:var(--primary);">¥0</div>
+                <div class="summary-sub" id="annual-selected">（1年あたり: ¥0）</div>
+                <div id="savings-badge-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let appData = {
+    parents: [
+        {
+            id: "p1",
+            name: "次世代ワークステーション Type-A",
+            years: 4,
+            parts: [
+                { name: "CPUユニット", newCost: 65000, newMaint: 0, reuseCost: 32000, reuseMaint: 2000, choice: "reuse" },
+                { name: "グラフィックボード", newCost: 120000, newMaint: 0, reuseCost: 75000, reuseMaint: 5000, choice: "new" },
+                { name: "電源ユニット", newCost: 15000, newMaint: 0, reuseCost: 6000, reuseMaint: 1000, choice: "new" }
+            ]
+        }
+    ],
+    currentParentId: "p1"
+};
+
+window.onload = function() {
+    renderParentSelect();
+    renderPartsTable();
+};
+
+function getCurrentParent() {
+    return appData.parents.find(p => p.id === appData.currentParentId);
+}
+
+function renderParentSelect() {
+    const select = document.getElementById("parent-select");
+    select.innerHTML = "";
+    appData.parents.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id;
+        option.textContent = p.name;
+        if(p.id === appData.currentParentId) option.selected = true;
+        select.appendChild(option);
+    });
+    
+    const current = getCurrentParent();
+    if(current) {
+        document.getElementById("parent-name-input").value = current.name;
+        document.getElementById("parent-years-input").value = current.years || 3;
+        document.getElementById("summary-title-badge").innerText = `— ${current.name} (${current.years || 3}年運用想定)`;
+    }
+}
+
+function switchParent() {
+    appData.currentParentId = document.getElementById("parent-select").value;
+    renderParentSelect();
+    renderPartsTable();
+}
+
+function saveParentName() {
+    const nameInput = document.getElementById("parent-name-input").value.trim();
+    const yearsInput = parseInt(document.getElementById("parent-years-input").value) || 1;
+
+    if (!nameInput) return alert("製品名を入力してください");
+
+    let current = getCurrentParent();
+    if (current) {
+        current.name = nameInput;
+        current.years = yearsInput;
+    } else {
+        const newId = "p_" + Date.now();
+        appData.parents.push({ id: newId, name: nameInput, years: yearsInput, parts: [] });
+        appData.currentParentId = newId;
+    }
+    renderParentSelect();
+    renderPartsTable();
+}
+
+function deleteParent() {
+    if (appData.parents.length <= 1) return alert("最低1つの製品登録が必要です");
+    if (!confirm("この製品データを削除してもよろしいですか？")) return;
+
+    appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
+    appData.currentParentId = appData.parents[0].id;
+    renderParentSelect();
+    renderPartsTable();
+}
+
+function renderPartsTable() {
+    const parent = getCurrentParent();
+    const tbody = document.getElementById("parts-tbody");
+    tbody.innerHTML = "";
+
+    if (!parent || parent.parts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">構成部品がありません。「＋ 部品を追加」ボタンから追加してください。</td></tr>`;
+        calculateTotals();
+        return;
+    }
+
+    parent.parts.forEach((part, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><input type="text" class="input-sm" value="${part.name}" onchange="updatePart(${index}, 'name', this.value)"></td>
+            <td class="col-new"><input type="number" class="input-sm" value="${part.newCost}" onchange="updatePart(${index}, 'newCost', this.value)"></td>
+            <td class="col-new"><input type="number" class="input-sm" value="${part.newMaint}" onchange="updatePart(${index}, 'newMaint', this.value)"></td>
+            <td class="col-reuse"><input type="number" class="input-sm" value="${part.reuseCost}" onchange="updatePart(${index}, 'reuseCost', this.value)"></td>
+            <td class="col-reuse"><input type="number" class="input-sm" value="${part.reuseMaint}" onchange="updatePart(${index}, 'reuseMaint', this.value)"></td>
+            <td>
+                <select class="input-sm select-choice" onchange="updatePart(${index}, 'choice', this.value)">
+                    <option value="new" ${part.choice === 'new' ? 'selected' : ''}>✨ 新品</option>
+                    <option value="reuse" ${part.choice === 'reuse' ? 'selected' : ''}>♻️ リユース</option>
+                </select>
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="deletePart(${index})">✕</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    calculateTotals();
+}
+
+function addPartRow() {
+    const parent = getCurrentParent();
+    if (!parent) return;
+    parent.parts.push({
+        name: "新規パーツ",
+        newCost: 10000,
+        newMaint: 0,
+        reuseCost: 5000,
+        reuseMaint: 0,
+        choice: "reuse"
+    });
+    renderPartsTable();
+}
+
+function updatePart(index, key, value) {
+    const parent = getCurrentParent();
+    if (!parent) return;
+    
+    if (key === 'name' || key === 'choice') {
+        parent.parts[index][key] = value;
+    } else {
+        parent.parts[index][key] = parseFloat(value) || 0;
+    }
+    calculateTotals();
+}
+
+function deletePart(index) {
+    const parent = getCurrentParent();
+    if (!parent) return;
+    parent.parts.splice(index, 1);
+    renderPartsTable();
+}
+
+function calculateTotals() {
+    const parent = getCurrentParent();
+    if (!parent) return;
+
+    const years = parent.years || 1;
+    let totalAllNew = 0;
+    let totalAllReuse = 0;
+    let totalSelected = 0;
+
+    parent.parts.forEach(part => {
+        const nTotal = part.newCost + (part.newMaint * years);
+        const rTotal = part.reuseCost + (part.reuseMaint * years);
+
+        totalAllNew += nTotal;
+        totalAllReuse += rTotal;
+        totalSelected += (part.choice === 'new') ? nTotal : rTotal;
+    });
+
+    // フォーマット出力
+    const fmt = (val) => "¥" + Math.round(val).toLocaleString();
+
+    document.getElementById("total-all-new").innerText = fmt(totalAllNew);
+    document.getElementById("annual-all-new").innerText = `（1年あたり: ${fmt(totalAllNew / years)}）`;
+
+    document.getElementById("total-all-reuse").innerText = fmt(totalAllReuse);
+    document.getElementById("annual-all-reuse").innerText = `（1年あたり: ${fmt(totalAllReuse / years)}）`;
+
+    document.getElementById("total-selected").innerText = fmt(totalSelected);
+    document.getElementById("annual-selected").innerText = `（1年あたり: ${fmt(totalSelected / years)}）`;
+
+    // 差額バッジ
+    const diff = totalAllNew - totalSelected;
+    const badgeContainer = document.getElementById("savings-badge-container");
+    if (diff > 0) {
+        badgeContainer.innerHTML = `<span class="badge-diff badge-savings">オール新品より ${fmt(diff)} 削減</span>`;
+    } else if (diff < 0) {
+        badgeContainer.innerHTML = `<span class="badge-diff badge-costup">オール新品より ${fmt(Math.abs(diff))} コスト高</span>`;
+    } else {
+        badgeContainer.innerHTML = `<span class="badge-diff" style="background:#e2e8f0; color:var(--text-secondary);">オール新品と同額</span>`;
+    }
+}
+</script>
+</body>
+</html>
