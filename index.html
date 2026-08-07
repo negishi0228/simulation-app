@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>部品採用シミュレーター</title>
+<style>
+    :root {
+        --system-bg: #f5f5f7;
+        --card-bg: rgba(255, 255, 255, 0.85);
+        --text-main: #1d1d1f;
+        --text-sub: #86868b;
+        --accent-blue: #0071e3;
+        --accent-green: #34c759;
+        --accent-red: #ff3b30;
+        --border-light: rgba(0, 0, 0, 0.08);
+        --radius-lg: 18px;
+        --radius-md: 12px;
+        --radius-sm: 8px;
+        --shadow-apple: 0 4px 24px rgba(0, 0, 0, 0.04);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+        color: var(--text-main);
+        background-color: var(--system-bg);
+        margin: 0;
+        padding: 40px 20px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 30px; }
+    header h1 { font-size: 2.2rem; font-weight: 700; margin: 0 0 8px 0; }
+    header p { font-size: 1.05rem; color: var(--text-sub); margin: 0; }
+
+    .sync-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(52, 199, 89, 0.1);
+        color: var(--accent-green);
+        padding: 4px 12px;
+        border-radius: 980px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+    .sync-dot { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; }
+
+    .card {
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        box-shadow: var(--shadow-apple);
+        margin-bottom: 24px;
+    }
+
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .card-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+
+    /* 機種選択エリアのレイアウト */
+    .control-flex {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .form-item { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+    .form-item label { font-size: 0.8rem; font-weight: 500; color: var(--text-sub); }
+
+    select, input[type="text"], input[type="number"] {
+        appearance: none;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: var(--text-main);
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    select:focus, input:focus {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px;
+        border-radius: 980px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .btn-primary { background-color: var(--accent-blue); color: white; }
+    .btn-secondary { background-color: rgba(0, 0, 0, 0.05); color: var(--text-main); }
+    .btn-danger { background-color: rgba(255, 59, 48, 0.1); color: var(--accent-red); }
+
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.9rem; }
+    th { padding: 12px 14px; font-weight: 500; color: var(--text-sub); text-align: left; border-bottom: 1px solid var(--border-light); }
+    td { padding: 14px; border-bottom: 1px solid var(--border-light); background-color: rgba(255, 255, 255, 0.4); }
+    
+    .input-table { width: 100%; min-width: 70px; padding: 6px 10px !important; font-size: 0.85rem !important; }
+
+    .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 768px) { .summary-cards { grid-template-columns: 1fr; } }
+    
+    .summary-card {
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        border: 1px solid var(--border-light);
+        text-align: center;
+    }
+    .summary-card.featured {
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid var(--accent-blue);
+        box-shadow: 0 8px 30px rgba(0, 113, 227, 0.12);
+    }
+    .summary-label { font-size: 0.8rem; font-weight: 500; color: var(--text-sub); margin-bottom: 8px; }
+    .summary-val { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+    .summary-sub { font-size: 0.8rem; color: var(--text-sub); }
+    
+    .pill-badge { display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 980px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: #eefbf1; color: var(--accent-green); }
+    .badge-warning { background: #fff0f0; color: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>部品採用シミュレーター</h1>
+        <p>複数人でリアルタイム共同編集対応</p>
+        <div class="sync-status">
+            <div class="sync-dot"></div>
+            <span id="sync-text">リアルタイム同期完了</span>
+        </div>
+    </header>
+
+    <!-- 1. 機種名の設定 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">📦 機種名の設定</div>
+        <div class="control-flex">
+            <div class="form-item">
+                <label>機種名</label>
+                <select id="parent-select" onchange="switchParent()"></select>
+            </div>
+            <button class="btn btn-primary" onclick="addParent()">＋ 機種を追加</button>
+            <button class="btn btn-secondary" onclick="editParentName()">機種名を変更</button>
+            <button class="btn btn-danger" onclick="deleteParent()">削除</button>
+        </div>
+    </div>
+
+    <!-- 2. 子部品テーブル -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🧩 構成部品リスト</div>
+            <button class="btn btn-secondary" onclick="addPartRow()">＋ 部品を追加</button>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 22%;">部品名</th>
+                        <th style="width: 15%;">新品 初期費</th>
+                        <th style="width: 15%;">新品 年維持費</th>
+                        <th style="width: 15%;">リユース 初期費</th>
+                        <th style="width: 15%;">リユース 年維持費</th>
+                        <th style="width: 120px;">採用</th>
+                        <th style="width: 50px; text-align: center;"></th>
+                    </tr>
+                </thead>
+                <tbody id="parts-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. シミュレーションサマリー -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:20px;">📊 コスト比較サマリー</div>
+        
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-label">オール新品</div>
+                <div class="summary-val" id="total-all-new">¥0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">オールリユース</div>
+                <div class="summary-val" id="total-all-reuse">¥0</div>
+            </div>
+            <div class="summary-card featured">
+                <div class="summary-label" style="color:var(--accent-blue);">選択中のカスタム構成</div>
+                <div class="summary-val" id="total-selected" style="color:var(--accent-blue);">¥0</div>
+                <div id="savings-badge-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase SDK の読み込み -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// --- ★取得したご自身の Firebase 設定コードをここに貼り付けます ★ ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Firebase の初期化
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const simRef = db.ref('simulationData');
+
+let appData = {
+    parents: [
+        {
+            id: "p1",
+            name: "MacBook Pro カスタム",
+            parts: [
+                { name: "Display Panel", newCost: 45000, newMaint: 0, reuseCost: 22000, reuseMaint: 1000, choice: "reuse" },
+                { name: "Logic Board", newCost: 85000, newMaint: 0, reuseCost: 50000, reuseMaint: 3000, choice: "new" }
+            ]
+        }
+    ],
+    currentParentId: "p1"
+};
+
+// --- リアルタイム同期 ---
+simRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        appData = data;
+        renderParentSelect();
+        renderPartsTable();
+        document.getElementById("sync-text").innerText = "リアルタイム同期完了";
+    } else {
+        saveDataToFirebase();
+    }
+});
+
+function saveDataToFirebase() {
+    document.getElementById("sync-text").innerText = "保存中...";
+    simRef.set(appData);
+}
+
+function getCurrentParent() {
+    if (!appData.parents) return null;
+    return appData.parents.find(p => p.id === appData.currentParentId) || appData.parents[0];
+}
+
+function renderParentSelect() {
+    const select = document.getElementById("parent-select");
+    select.innerHTML = "";
+    if (!appData.parents) return;
+    
+    appData.parents.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p.id;
+        option.textContent = p.name;
+        if(p.id === appData.currentParentId) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+function switchParent() {
+    appData.currentParentId = document.getElementById("parent-select").value;
+    saveDataToFirebase();
+}
+
+// ＋ボタンで新しい機種名を登録
+function addParent() {
+    const newName = prompt("新しい機種名を入力してください:");
+    if (!newName || !newName.trim()) return;
+
+    const newId = "p_" + Date.now();
+    if (!appData.parents) appData.parents = [];
+    appData.parents.push({ id: newId, name: newName.trim(), parts: [] });
+    appData.currentParentId = newId;
+    saveDataToFirebase();
+}
+
+// 選択中の機種名を変更
+function editParentName() {
+    const current = getCurrentParent();
+    if (!current) return;
+
+    const updatedName = prompt("機種名を変更します:", current.name);
+    if (!updatedName || !updatedName.trim()) return;
+
+    current.name = updatedName.trim();
+    saveDataToFirebase();
+}
+
+function deleteParent() {
+    if (appData.parents.length <= 1) return alert("最低1つの機種データが必要です");
+    if (!confirm("この機種データを削除しますか？")) return;
+
+    appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
+    appData.currentParentId = appData.parents[0].id;
+    saveDataToFirebase();
+}
+
+function renderPartsTable() {
+    const parent = getCurrentParent();
+    const tbody = document.getElementById("parts-tbody");
+    tbody.innerHTML = "";
+
+    if (!parent || !parent.parts || parent.parts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-sub); padding:30px;">部品が追加されていません</td></tr>`;
+        calculateTotals();
+        return;
+    }
+
+    parent.parts.forEach((part, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><input type="text" class="input-table" value="${part.name}" onchange="updatePart(${index}, 'name', this.value)"></td>
+            <td><input type="number" class="input-table" value="${part.newCost}" onchange="updatePart(${index}, 'newCost', this.value)"></td>
+            <td><input type="number" class="input-table" value="${part.newMaint}" onchange="updatePart(${index}, 'newMaint', this.value)"></td>
+            <td><input type="number" class="input-table" value="${part.reuseCost}" onchange="updatePart(${index}, 'reuseCost', this.value)"></td>
+            <td><input type="number" class="input-table" value="${part.reuseMaint}" onchange="updatePart(${index}, 'reuseMaint', this.value)"></td>
+            <td>
+                <select class="input-table" style="font-weight:600;" onchange="updatePart(${index}, 'choice', this.value)">
+                    <option value="new" ${part.choice === 'new' ? 'selected' : ''}>新品</option>
+                    <option value="reuse" ${part.choice === 'reuse' ? 'selected' : ''}>リユース</option>
+                </select>
+            </td>
+            <td style="text-align:center;">
+                <button class="btn btn-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="deletePart(${index})">✕</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    calculateTotals();
+}
+
+function addPartRow() {
+    const parent = getCurrentParent();
+    if (!parent) return;
+    if (!parent.parts) parent.parts = [];
+    parent.parts.push({
+        name: "New Component",
+        newCost: 10000,
+        newMaint: 0,
+        reuseCost: 5000,
+        reuseMaint: 0,
+        choice: "reuse"
+    });
+    saveDataToFirebase();
+}
+
+function updatePart(index, key, value) {
+    const parent = getCurrentParent();
+    if (!parent || !parent.parts) return;
+    
+    if (key === 'name' || key === 'choice') {
+        parent.parts[index][key] = value;
+    } else {
+        parent.parts[index][key] = parseFloat(value) || 0;
+    }
+    saveDataToFirebase();
+}
+
+function deletePart(index) {
+    const parent = getCurrentParent();
+    if (!parent || !parent.parts) return;
+    parent.parts.splice(index, 1);
+    saveDataToFirebase();
+}
+
+function calculateTotals() {
+    const parent = getCurrentParent();
+    if (!parent || !parent.parts) return;
+
+    let totalAllNew = 0;
+    let totalAllReuse = 0;
+    let totalSelected = 0;
+
+    parent.parts.forEach(part => {
+        const nTotal = part.newCost + part.newMaint;
+        const rTotal = part.reuseCost + part.reuseMaint;
+
+        totalAllNew += nTotal;
+        totalAllReuse += rTotal;
+        totalSelected += (part.choice === 'new') ? nTotal : rTotal;
+    });
+
+    const fmt = (val) => "¥" + Math.round(val).toLocaleString();
+
+    document.getElementById("total-all-new").innerText = fmt(totalAllNew);
+    document.getElementById("total-all-reuse").innerText = fmt(totalAllReuse);
+    document.getElementById("total-selected").innerText = fmt(totalSelected);
+
+    const diff = totalAllNew - totalSelected;
+    const badgeContainer = document.getElementById("savings-badge-container");
+    if (diff > 0) {
+        badgeContainer.innerHTML = `<span class="pill-badge badge-success">新品より ${fmt(diff)} 節約</span>`;
+    } else if (diff < 0) {
+        badgeContainer.innerHTML = `<span class="pill-badge badge-warning">新品より ${fmt(Math.abs(diff))} コスト高</span>`;
+    } else {
+        badgeContainer.innerHTML = `<span class="pill-badge" style="background:rgba(0,0,0,0.05); color:var(--text-sub);">新品と同額</span>`;
+    }
+}
+</script>
+</body>
+</html>
