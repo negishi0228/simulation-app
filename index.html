@@ -30,7 +30,7 @@
     }
 
     .container {
-        max-width: 1200px;
+        max-width: 1240px;
         margin: 0 auto;
     }
 
@@ -62,6 +62,13 @@
         outline: none;
     }
 
+    select:disabled, input:disabled {
+        background-color: #f5f7fa;
+        color: #909399;
+        cursor: not-allowed;
+        border-color: #e4e7ed;
+    }
+
     .btn {
         padding: 9px 18px;
         border-radius: 4px;
@@ -78,31 +85,57 @@
     }
     .btn-navy:hover { background-color: var(--navy-hover); }
 
-    .btn-sm-add {
+    /* 小さなユニット追加ボタン (+ボタン) */
+    .btn-unit-add {
         background-color: #e4e7ed;
         color: #606266;
         font-size: 0.75rem;
+        font-weight: bold;
         padding: 4px 8px;
-        border-radius: 3px;
+        border-radius: 4px;
         cursor: pointer;
-        border: none;
-        margin-bottom: 4px;
-        display: block;
-        width: 100%;
+        border: 1px solid var(--border-color);
+        white-space: nowrap;
+        transition: background-color 0.2s;
     }
-    .btn-sm-add:hover { background-color: #dcdfe6; }
+    .btn-unit-add:hover { background-color: #dcdfe6; color: var(--primary-navy); }
+
+    /* ロック / 編集ボタン */
+    .btn-lock {
+        background-color: #67c23a;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .btn-lock:hover { background-color: #5daf34; }
+
+    .btn-unlock {
+        background-color: #e6a23c;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .btn-unlock:hover { background-color: #cf9236; }
 
     .btn-del {
         background-color: #f56c6c;
         color: white;
         border: none;
         border-radius: 3px;
-        padding: 2px 8px;
+        padding: 4px 8px;
         cursor: pointer;
         font-size: 0.8rem;
     }
 
-    /* KPIカード (4コ並び) */
+    /* KPIカード */
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -159,6 +192,12 @@
         text-align: center;
     }
 
+    .unit-cell-flex {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
     .select-use-type {
         padding: 6px 10px;
         border-radius: 4px;
@@ -177,7 +216,6 @@
         border-color: #e1f3d8;
     }
 
-    /* テーブルフッター */
     tfoot tr td {
         background-color: #eaedf2;
         font-weight: bold;
@@ -188,6 +226,10 @@
     .num-input {
         width: 70px;
         text-align: right;
+    }
+
+    .row-locked {
+        background-color: #fafafa;
     }
 </style>
 </head>
@@ -203,7 +245,7 @@
         <button class="btn btn-navy" onclick="addParent()">＋ 新しい親品番を登録</button>
     </div>
 
-    <!-- 2. KPI集計カード (画像と完全一致) -->
+    <!-- 2. KPI集計カード -->
     <div class="kpi-grid">
         <div class="kpi-card">
             <div class="kpi-title">全新品適用時（基準額）</div>
@@ -223,21 +265,21 @@
         </div>
     </div>
 
-    <!-- 3. 部品テーブル (画像レイアウト再現) -->
+    <!-- 3. 部品テーブル -->
     <div class="table-card">
         <table>
             <thead>
                 <tr>
                     <th style="width: 10%;">品番コード</th>
                     <th style="width: 14%;">品番名</th>
-                    <th style="width: 14%;">ユニット名</th>
-                    <th style="width: 11%;">使用区分</th>
-                    <th style="width: 8%;">使用数</th>
-                    <th style="width: 10%;">新品単価</th>
-                    <th style="width: 10%;">リユース単価</th>
-                    <th style="width: 10%;">適用単価</th>
-                    <th style="width: 10%;">小計</th>
-                    <th style="width: 8%;">操作</th>
+                    <th style="width: 16%;">ユニット名</th>
+                    <th style="width: 10%;">使用区分</th>
+                    <th style="width: 7%;">使用数</th>
+                    <th style="width: 9%;">新品単価</th>
+                    <th style="width: 9%;">リユース単価</th>
+                    <th style="width: 9%;">適用単価</th>
+                    <th style="width: 9%;">小計</th>
+                    <th style="width: 7%;">操作</th>
                 </tr>
             </thead>
             <tbody id="parts-tbody">
@@ -278,9 +320,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v2');
+const simRef = db.ref('simulationData_v3');
 
-// 初期サンプルデータ（添付画像と同じデータ例）
 let appData = {
     parents: [
         {
@@ -291,6 +332,7 @@ let appData = {
                 {
                     code: "P-101",
                     name: "給水バルブ",
+                    locked: false,
                     units: [
                         { name: "AAAユニット", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
                         { name: "BBBユニット", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
@@ -299,6 +341,7 @@ let appData = {
                 {
                     code: "P-102",
                     name: "駆動モータ",
+                    locked: false,
                     units: [
                         { name: "CCCユニット", choice: "reuse", qty: 1, newPrice: 18000, reusePrice: 8000 }
                     ]
@@ -364,7 +407,6 @@ function addParent() {
     saveDataToFirebase();
 }
 
-// テーブル描画（セルの結合を考慮）
 function renderTable() {
     const parent = getCurrentParent();
     const tbody = document.getElementById("parts-tbody");
@@ -378,45 +420,70 @@ function renderTable() {
 
     parent.parts.forEach((part, pIdx) => {
         const rowSpan = part.units.length;
+        const isLocked = !!part.locked;
 
         part.units.forEach((unit, uIdx) => {
             const tr = document.createElement("tr");
+            if (isLocked) tr.classList.add("row-locked");
 
-            // 1行目のときのみ品番コードと品番名を表示（縦結合）
+            // 1行目のときのみ品番コード、品番名を表示（縦結合）
             if (uIdx === 0) {
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.code}" onchange="updatePartGroup(${pIdx}, 'code', this.value)"></td>
-                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.name}" onchange="updatePartGroup(${pIdx}, 'name', this.value)"></td>
+                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.code}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'code', this.value)"></td>
+                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.name}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'name', this.value)"></td>
                 `;
             }
 
-            // 適用単価と小計の計算
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
             const subTotal = appliedPrice * unit.qty;
 
             tr.innerHTML += `
-                <td><input type="text" style="width:100%; text-align:center;" value="${unit.name}" onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)"></td>
                 <td>
-                    <select class="select-use-type ${unit.choice === 'new' ? 'type-new' : 'type-reuse'}" onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
+                    <div class="unit-cell-flex">
+                        <input type="text" style="flex:1;" value="${unit.name}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
+                        ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <select class="select-use-type ${unit.choice === 'new' ? 'type-new' : 'type-reuse'}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
                         <option value="new" ${unit.choice === 'new' ? 'selected' : ''}>新品</option>
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="number" class="num-input" value="${unit.qty}" min="1" onchange="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
-                <td><input type="number" class="num-input" value="${unit.newPrice}" onchange="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
-                <td><input type="number" class="num-input" value="${unit.reusePrice}" onchange="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
+                <td><input type="number" class="num-input" value="${unit.qty}" min="1" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
+                <td><input type="number" class="num-input" value="${unit.newPrice}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
+                <td><input type="number" class="num-input" value="${unit.reusePrice}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
                 <td style="font-weight:bold;">¥${appliedPrice.toLocaleString()}</td>
                 <td style="font-weight:bold;">¥${subTotal.toLocaleString()}</td>
-                <td>
-                    ${uIdx === 0 ? `<button class="btn-sm-add" onclick="addUnitRow(${pIdx})">＋ユニット追加</button>` : ''}
-                    <button class="btn-del" onclick="deleteUnit(${pIdx}, ${uIdx})">✕</button>
-                </td>
             `;
+
+            // 1行目のときのみロック/編集ボタン、操作ボタンを表示
+            if (uIdx === 0) {
+                tr.innerHTML += `
+                    <td rowspan="${rowSpan}">
+                        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+                            ${isLocked 
+                                ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
+                                : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button>
+                                   <button class="btn-del" onclick="deletePartGroup(${pIdx})">✕</button>`
+                            }
+                        </div>
+                    </td>
+                `;
+            }
+
             tbody.appendChild(tr);
         });
     });
 
     calculateTotals();
+}
+
+function toggleLock(pIdx) {
+    const parent = getCurrentParent();
+    if (!parent || !parent.parts[pIdx]) return;
+    parent.parts[pIdx].locked = !parent.parts[pIdx].locked;
+    saveDataToFirebase();
 }
 
 function addPartGroup() {
@@ -427,6 +494,7 @@ function addPartGroup() {
     parent.parts.push({
         code: "P-" + (101 + parent.parts.length),
         name: "新規パーツ",
+        locked: false,
         units: [
             { name: "ユニットA", choice: "new", qty: 1, newPrice: 10000, reusePrice: 5000 }
         ]
@@ -467,19 +535,15 @@ function updateUnit(pIdx, uIdx, key, val) {
     saveDataToFirebase();
 }
 
-function deleteUnit(pIdx, uIdx) {
+function deletePartGroup(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
+    if (!confirm("このパーツと含まれるユニットを削除しますか？")) return;
 
-    parent.parts[pIdx].units.splice(uIdx, 1);
-    // ユニットが0件になったらパーツ自体も削除
-    if (parent.parts[pIdx].units.length === 0) {
-        parent.parts.splice(pIdx, 1);
-    }
+    parent.parts.splice(pIdx, 1);
     saveDataToFirebase();
 }
 
-// KPI集計
 function calculateTotals() {
     const parent = getCurrentParent();
     if (!parent || !parent.parts) return;
