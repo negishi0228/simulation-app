@@ -57,9 +57,8 @@
         margin-bottom: -12px; border-bottom: 4px solid transparent; transition: all 0.2s;
     }
     .tab-btn:hover { color: var(--primary-navy); }
-    .tab-btn.active { color: var(--primary-navy); border-bottom: 4px solid var(--primary-navy); }
+    .tab-btn.active { color: var(--primary-navy); border-bottom: 4px solid var(--primary-navy); background-color: transparent; }
 
-    /* タブコンテンツ切り替え */
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
@@ -79,10 +78,13 @@
     }
     .parent-btn:active { cursor: grabbing; }
     .parent-btn.active { background-color: var(--primary-navy); color: #fff; border-color: var(--primary-navy); }
-    .parent-btn:hover:not(.active) { background-color: #f5f7fa; }
+    /* 比較モード選択時 */
+    .parent-btn.compare-selected { background-color: #e6a23c; color: #fff; border-color: #e6a23c; }
+    
+    .parent-btn:hover:not(.active):not(.compare-selected) { background-color: #f5f7fa; }
     .parent-btn.drag-over { border-left: 3px solid var(--primary-navy); padding-left: 14px; }
 
-    select, input[type="text"], input[type="date"] {
+    select, input[type="text"], input[type="number"], input[type="date"] {
         padding: 7px 8px; border: 1px solid var(--border-color); border-radius: 4px;
         font-size: 0.88rem; outline: none; background-color: #fff; width: 100%;
     }
@@ -93,13 +95,12 @@
     .btn-navy:hover { background-color: var(--navy-hover); }
     .btn-outline { background-color: transparent; color: var(--primary-navy); border: 1px solid var(--primary-navy); }
     .btn-outline:hover { background-color: #eff6ff; }
+    .btn-compare-active { background-color: #e6a23c; color: white; border: 1px solid #e6a23c; }
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
     .btn-unit-add { background-color: #e4e7ed; color: #1f5078; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #c0c4cc; flex-shrink: 0; }
-    .btn-unit-add:hover { background-color: #1f5078; color: white; border-color: #1f5078; }
     .btn-unit-del { background-color: #fef0f0; color: #f56c6c; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2; flex-shrink: 0; }
-    .btn-unit-del:hover { background-color: #f56c6c; color: white; border-color: #f56c6c; }
 
     /* ロック / 編集ボタン */
     .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; }
@@ -112,32 +113,24 @@
     .kpi-title { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 8px; font-weight: 500; }
     .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--primary-navy); }
 
-    /* テーブルデザイン */
+    /* テーブルデザイン (共通) */
     .table-card { background: var(--card-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1240px; }
-    thead th { background-color: var(--primary-navy); color: white; padding: 12px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; white-space: nowrap; }
-    tbody td { padding: 10px 4px; border-bottom: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
-    tfoot tr td { background-color: #eaedf2; font-weight: bold; padding: 14px 6px; border-top: 2px solid #dcdfe6; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1100px; }
+    thead th { background-color: var(--primary-navy); color: white; padding: 10px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); }
+    tbody td { padding: 10px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
+    tfoot tr td { background-color: #eaedf2; font-weight: bold; padding: 12px 6px; border-top: 2px solid #dcdfe6; border: 1px solid #dcdfe6; }
     
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
-    /* 比較ビュー */
-    .compare-view { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
-    .compare-col { min-width: 750px; flex: 1; background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding: 20px; }
-    .compare-col h3 { margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px; }
-
-    /* 計画表（マトリックス形式）用 */
-    .plan-matrix-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 800px; }
-    .plan-matrix-table th, .plan-matrix-table td { border: 1px solid #333; padding: 6px; text-align: center; background-color: #fff; }
-    .plan-matrix-table th { font-weight: normal; }
+    /* スケジュール（計画表）専用 */
+    .day-sat { background-color: #f0f4ff; } 
+    .day-sun { background-color: #fff0f0; } 
+    .stock-alert { color: #f56c6c; font-weight: bold; background-color: #fff0f0; }
     
-    /* ヘッダーの固定 */
-    .plan-matrix-table thead th { position: sticky; z-index: 10; box-shadow: inset 0 0 0 1px #333; border: none; }
-    .plan-matrix-table thead tr:nth-child(1) th { top: 0; }
-    .plan-matrix-table thead tr:nth-child(2) th { top: 31px; }
-    .plan-matrix-table thead tr:nth-child(3) th { top: 62px; }
+    /* マトリクス比較表専用 */
+    .matrix-model-col { background-color: #f9fbfd; }
 </style>
 </head>
 <body>
@@ -148,7 +141,7 @@
         <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
         <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
-            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表</button>
+            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表 (在庫管理)</button>
             <button class="tab-btn" id="tab-btn-master" onclick="switchTab('master')">⚙️ 品番リスト設定</button>
         </div>
     </div>
@@ -158,18 +151,24 @@
     =========================================== -->
     <div id="view-sim" class="tab-content active">
         <div class="header-card">
+            <!-- 比較モード時の説明テキスト -->
+            <div id="compare-instructions" style="display:none; color:#e6a23c; font-weight:bold; font-size:0.9rem;">
+                ※ 比較したい機種のボタンをクリックして選択してください（複数選択可）
+            </div>
+            
             <div class="parent-selector" id="parent-button-list"></div>
+            
             <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;" id="date-settings-area">
                     <span style="font-size:0.9rem; font-weight:bold; color:var(--text-sub);">📅 使用期間:</span>
                     <input type="date" id="parent-start-date" onchange="updateParentDate('startDate', this.value)" style="width:auto; padding:5px 8px;">
                     <span style="color:var(--text-sub);">〜</span>
                     <input type="date" id="parent-end-date" onchange="updateParentDate('endDate', this.value)" style="width:auto; padding:5px 8px;">
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-outline" onclick="editCurrentParentName()">✏️ 機種名を変更</button>
+                    <button class="btn btn-outline" id="btn-edit-name" onclick="editCurrentParentName()">✏️ 機種名を変更</button>
                     <button class="btn btn-outline" id="btn-compare" onclick="toggleCompareMode()">並べて比較</button>
-                    <button class="btn btn-navy" onclick="addParent()">＋ 新規機種登録</button>
+                    <button class="btn btn-navy" id="btn-add-parent" onclick="addParent()">＋ 新規機種登録</button>
                 </div>
             </div>
         </div>
@@ -184,13 +183,13 @@
             </div>
 
             <div class="table-card">
-                <table>
+                <table style="min-width: 1200px;">
                     <thead>
                         <tr>
-                            <th style="width: 14%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/編集操作)</span></th>
+                            <th style="width: 14%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/削除)</span></th>
                             <th style="width: 17%;">ユニット名</th>
                             <th style="width: 110px;">品番コード</th>
-                            <th style="width: 12%;">品番名</th>
+                            <th style="width: 14%;">品番名</th>
                             <th style="width: 85px;">使用区分</th>
                             <th style="width: 60px;">員数</th>
                             <th style="width: 60px;">使用数</th>
@@ -218,18 +217,20 @@
             </div>
         </div>
 
-        <!-- 比較モード -->
-        <div id="compare-view" class="compare-view" style="display: none;"></div>
+        <!-- 比較モード（マトリクス） -->
+        <div id="compare-view" style="display: none;">
+            <!-- JSでマトリクス表を描画 -->
+        </div>
     </div>
 
     <!-- ==========================================
-         タブ2: 計画表（マトリックス）画面
+         タブ2: 計画表（カレンダー＆在庫マトリクス）画面
     =========================================== -->
     <div id="view-plan" class="tab-content">
-        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 リユース部品 使用開始スケジュール</h2>
-        <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 16px;">
-            ※使用区分が「リユース」に設定されている部品のみ表示されます。<br>
-            ※機種の「使用期間（開始日）」に合致する日付に、手配必要数（員数×使用数）が表示されます。
+        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 リユース部品 計画・在庫管理表</h2>
+        <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
+            ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
+            ※「マスターリスト」で設定した初期在庫から、各機種の開始日に合わせて必要数が自動で引き落とされます。
         </p>
         
         <div id="view-plan-content">
@@ -243,15 +244,16 @@
     <div id="view-master" class="tab-content">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
             <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">部品マスターリスト</h3>
-                <div class="table-card" style="box-shadow:none; border:1px solid var(--border-color);">
+                <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">部品マスターリスト (初期在庫の設定)</h3>
+                <div class="table-card" style="box-shadow:none;">
                     <table style="min-width:auto;">
                         <thead>
                             <tr>
-                                <th style="width:25%; background:#e4e7ed; color:var(--text-main);">品名</th>
-                                <th style="width:25%; background:#e4e7ed; color:var(--text-main);">品番コード</th>
-                                <th style="width:40%; background:#e4e7ed; color:var(--text-main);">品番名</th>
-                                <th style="width:10%; background:#e4e7ed; color:var(--text-main);">操作</th>
+                                <th style="width:20%;">品名</th>
+                                <th style="width:20%;">品番コード</th>
+                                <th style="width:30%;">品番名</th>
+                                <th style="width:15%;">初期在庫数</th>
+                                <th style="width:15%;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-parts-tbody"></tbody>
@@ -261,12 +263,12 @@
             </div>
             <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">ユニットマスター</h3>
-                <div class="table-card" style="box-shadow:none; border:1px solid var(--border-color);">
+                <div class="table-card" style="box-shadow:none;">
                     <table style="min-width:auto;">
                         <thead>
                             <tr>
-                                <th style="width:80%; background:#e4e7ed; color:var(--text-main);">ユニット名</th>
-                                <th style="width:20%; background:#e4e7ed; color:var(--text-main);">操作</th>
+                                <th style="width:80%;">ユニット名</th>
+                                <th style="width:20%;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-units-tbody"></tbody>
@@ -283,7 +285,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// ★ Firebase 設定情報をご自身のものに置き換えてください ★
+// ★ Firebase 設定情報 ★
 const firebaseConfig = {
   apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
   authDomain: "resim-3c978.firebaseapp.com",
@@ -294,50 +296,14 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v14'); // バージョン更新
+// データ保持のための参照先固定（在庫機能対応 v15）
+const simRef = db.ref('simulationData_v15');
 
-let appData = {
-    masterParts: [
-        { itemName: "AAA", code: "1234567", partName: "AAA 新品" },
-        { itemName: "AAA", code: "1234568", partName: "AAA リユース" },
-        { itemName: "BBB", code: "1234569", partName: "BBB 新品" },
-        { itemName: "BBB", code: "1234570", partName: "BBB リユース" }
-    ],
-    masterUnits: [
-        { name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }
-    ],
-    parents: [
-        {
-            id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2029-08-01",
-            parts: [
-                {
-                    itemName: "AAA", locked: false,
-                    units: [
-                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
-                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2029-08-01",
-            parts: [
-                {
-                    itemName: "AAA", locked: false,
-                    units: [
-                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 500, newPrice: 12000, reusePrice: 5000 }
-                    ]
-                }
-            ]
-        }
-    ],
-    currentParentId: "p1"
-};
-
+let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
 let isCompareMode = false;
+let compareSelectedIds = new Set();
 let draggedParentIdx = null;
 
 // リアルタイム同期
@@ -349,15 +315,50 @@ simRef.on('value', (snapshot) => {
         appData = data;
         
         renderParentButtons();
-        if (isCompareMode) renderCompareView();
+        if (isCompareMode) renderMatrixCompareView();
         else renderTable();
         
         renderMasterData();
-        renderPlanScheduleView(); // 新計画表の描画
+        renderPlanScheduleView();
     } else {
+        appData = getInitialSampleData();
         saveDataToFirebase();
     }
 });
+
+function getInitialSampleData() {
+    return {
+        masterParts: [
+            { itemName: "AAA", code: "1234567", partName: "AAA 新品", stock: 0 },
+            { itemName: "AAA", code: "1234568", partName: "AAA リユース", stock: 1500 },
+            { itemName: "BBB", code: "1234569", partName: "BBB 新品", stock: 0 },
+            { itemName: "BBB", code: "1234570", partName: "BBB リユース", stock: 800 }
+        ],
+        masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
+        parents: [
+            {
+                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2029-08-01",
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
+                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
+                    ]
+                }]
+            },
+            {
+                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2029-08-01",
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 600, newPrice: 12000, reusePrice: 5000 }
+                    ]
+                }]
+            }
+        ],
+        currentParentId: "p1"
+    };
+}
 
 function saveDataToFirebase() { simRef.set(appData); }
 
@@ -372,7 +373,7 @@ function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
 // ==========================================
-// マスターデータロジック
+// マスターデータロジック (在庫追加)
 // ==========================================
 function renderMasterData() {
     const partsBody = document.getElementById("master-parts-tbody");
@@ -383,6 +384,7 @@ function renderMasterData() {
                 <td><input type="text" value="${m.itemName}" onchange="updateMasterPart(${idx}, 'itemName', this.value)"></td>
                 <td><input type="text" value="${m.code}" onchange="updateMasterPart(${idx}, 'code', this.value)"></td>
                 <td><input type="text" value="${m.partName}" onchange="updateMasterPart(${idx}, 'partName', this.value)"></td>
+                <td><input type="number" class="text-center" value="${m.stock || 0}" onchange="updateMasterPart(${idx}, 'stock', this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterPart(${idx})">✕</button></td>
             </tr>
         `;
@@ -399,8 +401,11 @@ function renderMasterData() {
         `;
     });
 }
-function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "" }); saveDataToFirebase(); }
-function updateMasterPart(idx, key, val) { appData.masterParts[idx][key] = val; saveDataToFirebase(); }
+function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", stock: 0 }); saveDataToFirebase(); }
+function updateMasterPart(idx, key, val) { 
+    appData.masterParts[idx][key] = (key === 'stock') ? (parseInt(val) || 0) : val; 
+    saveDataToFirebase(); 
+}
 function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
 function addMasterUnit() { appData.masterUnits.push({ name: "新規ユニット" }); saveDataToFirebase(); }
 function updateMasterUnit(idx, val) { appData.masterUnits[idx].name = val; saveDataToFirebase(); }
@@ -416,39 +421,48 @@ function renderParentButtons() {
     if (!appData.parents) return;
     appData.parents.forEach((p, idx) => {
         const btn = document.createElement("button");
-        btn.className = "parent-btn" + (p.id === appData.currentParentId && !isCompareMode ? " active" : "");
+        
+        if (isCompareMode) {
+            btn.className = "parent-btn" + (compareSelectedIds.has(p.id) ? " compare-selected" : "");
+            btn.onclick = () => {
+                if(compareSelectedIds.has(p.id)) compareSelectedIds.delete(p.id);
+                else compareSelectedIds.add(p.id);
+                renderParentButtons();
+                renderMatrixCompareView();
+            };
+        } else {
+            btn.className = "parent-btn" + (p.id === appData.currentParentId ? " active" : "");
+            btn.draggable = true;
+            btn.onclick = () => { appData.currentParentId = p.id; saveDataToFirebase(); };
+
+            btn.ondragstart = (e) => {
+                draggedParentIdx = idx;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => btn.style.opacity = '0.4', 0);
+            };
+            btn.ondragover = (e) => { e.preventDefault(); btn.classList.add('drag-over'); };
+            btn.ondragleave = () => { btn.classList.remove('drag-over'); };
+            btn.ondrop = (e) => {
+                e.preventDefault();
+                btn.classList.remove('drag-over');
+                if(draggedParentIdx === null || draggedParentIdx === idx) return;
+                const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0];
+                appData.parents.splice(idx, 0, draggedItem);
+                saveDataToFirebase();
+            };
+            btn.ondragend = () => { btn.style.opacity = '1'; draggedParentIdx = null; };
+        }
+        
         btn.textContent = p.name;
-        btn.draggable = true;
-
-        btn.onclick = () => {
-            if(isCompareMode) toggleCompareMode();
-            appData.currentParentId = p.id;
-            saveDataToFirebase();
-        };
-
-        btn.ondragstart = (e) => {
-            draggedParentIdx = idx;
-            e.dataTransfer.effectAllowed = 'move';
-            setTimeout(() => btn.style.opacity = '0.4', 0);
-        };
-        btn.ondragover = (e) => { e.preventDefault(); btn.classList.add('drag-over'); };
-        btn.ondragleave = () => { btn.classList.remove('drag-over'); };
-        btn.ondrop = (e) => {
-            e.preventDefault();
-            btn.classList.remove('drag-over');
-            if(draggedParentIdx === null || draggedParentIdx === idx) return;
-            const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0];
-            appData.parents.splice(idx, 0, draggedItem);
-            saveDataToFirebase();
-        };
-        btn.ondragend = () => { btn.style.opacity = '1'; draggedParentIdx = null; };
         container.appendChild(btn);
     });
 
-    const curr = getCurrentParent();
-    if(curr) {
-        document.getElementById('parent-start-date').value = curr.startDate || "";
-        document.getElementById('parent-end-date').value = curr.endDate || "";
+    if (!isCompareMode) {
+        const curr = getCurrentParent();
+        if(curr) {
+            document.getElementById('parent-start-date').value = curr.startDate || "";
+            document.getElementById('parent-end-date').value = curr.endDate || "";
+        }
     }
 }
 
@@ -490,7 +504,157 @@ function deleteCurrentParent() {
 }
 
 // ==========================================
-// 📅 計画表 (マトリックス形式)
+// 並べて比較（マトリクス表示）モード
+// ==========================================
+function toggleCompareMode() {
+    isCompareMode = !isCompareMode;
+    const btn = document.getElementById('btn-compare');
+    
+    if (isCompareMode) {
+        btn.textContent = "個別表示に戻す";
+        btn.className = "btn btn-compare-active";
+        document.getElementById('single-view').style.display = 'none';
+        document.getElementById('compare-view').style.display = 'block';
+        document.getElementById('date-settings-area').style.display = 'none';
+        document.getElementById('btn-edit-name').style.display = 'none';
+        document.getElementById('btn-add-parent').style.display = 'none';
+        document.getElementById('compare-instructions').style.display = 'block';
+        
+        compareSelectedIds.clear();
+        compareSelectedIds.add(appData.currentParentId); // 現在の機種を初期選択
+        
+        renderParentButtons();
+        renderMatrixCompareView();
+    } else {
+        btn.textContent = "並べて比較";
+        btn.className = "btn btn-outline";
+        document.getElementById('single-view').style.display = 'block';
+        document.getElementById('compare-view').style.display = 'none';
+        document.getElementById('date-settings-area').style.display = 'flex';
+        document.getElementById('btn-edit-name').style.display = 'block';
+        document.getElementById('btn-add-parent').style.display = 'block';
+        document.getElementById('compare-instructions').style.display = 'none';
+        
+        renderParentButtons();
+        renderTable();
+    }
+}
+
+function renderMatrixCompareView() {
+    const container = document.getElementById("compare-view");
+    container.innerHTML = "";
+    
+    if (compareSelectedIds.size === 0) {
+        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">比較する機種を上部のボタンから選択してください。</div>`;
+        return;
+    }
+
+    const selectedParents = appData.parents.filter(p => compareSelectedIds.has(p.id));
+    
+    // 全部品を一意にリスト化
+    const uniquePartsMap = new Map();
+    
+    selectedParents.forEach(p => {
+        if (!p.parts) return;
+        p.parts.forEach(part => {
+            part.units.forEach(unit => {
+                const key = `${part.itemName}_${unit.name}_${unit.code}_${unit.partName}_${unit.choice}`;
+                if (!uniquePartsMap.has(key)) {
+                    uniquePartsMap.set(key, {
+                        itemName: part.itemName,
+                        unitName: unit.name,
+                        code: unit.code,
+                        partName: unit.partName,
+                        choice: unit.choice,
+                        price: (unit.choice === 'new') ? unit.newPrice : unit.reusePrice,
+                        models: {}
+                    });
+                }
+                const totalQty = (unit.insuu || 1) * (unit.qty || 0);
+                uniquePartsMap.get(key).models[p.id] = {
+                    insuu: unit.insuu || 1,
+                    qty: unit.qty || 0,
+                    totalQty: totalQty,
+                    subtotal: totalQty * ((unit.choice === 'new') ? unit.newPrice : unit.reusePrice)
+                };
+            });
+        });
+    });
+
+    const uniqueParts = Array.from(uniquePartsMap.values());
+
+    let html = `
+        <div class="table-card" style="max-height:600px; overflow-y:auto;">
+            <table>
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th rowspan="2">品名</th>
+                        <th rowspan="2">ユニット名</th>
+                        <th rowspan="2">品番コード</th>
+                        <th rowspan="2">品番名</th>
+                        <th rowspan="2">区分</th>
+                        <th rowspan="2">単価</th>
+    `;
+    
+    selectedParents.forEach(p => {
+        html += `<th colspan="2" class="matrix-model-col" style="border-left:2px solid #fff;">${p.name}</th>`;
+    });
+    
+    html += `</tr><tr>`;
+    selectedParents.forEach(p => {
+        html += `<th class="matrix-model-col" style="border-left:2px solid #fff;">必要数(員数×使用数)</th>
+                 <th class="matrix-model-col">小計</th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    if (uniqueParts.length === 0) {
+        html += `<tr><td colspan="${6 + selectedParents.length * 2}">登録されている部品データがありません。</td></tr>`;
+    } else {
+        let totals = {};
+        selectedParents.forEach(p => totals[p.id] = 0);
+
+        uniqueParts.forEach(up => {
+            const choiceText = up.choice === 'new' ? '<span style="color:#f56c6c; font-weight:bold;">新品</span>' : '<span style="color:#67c23a; font-weight:bold;">リユース</span>';
+            html += `
+                <tr>
+                    <td style="font-weight:bold;">${up.itemName || ''}</td>
+                    <td>${up.unitName || ''}</td>
+                    <td>${up.code || ''}</td>
+                    <td>${up.partName || ''}</td>
+                    <td>${choiceText}</td>
+                    <td class="text-right" style="font-weight:bold;">${fmtYen(up.price)}</td>
+            `;
+            
+            selectedParents.forEach(p => {
+                const mData = up.models[p.id];
+                if (mData) {
+                    totals[p.id] += mData.subtotal;
+                    html += `
+                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5;">${fmtNum(mData.totalQty)} <span style="font-size:0.7rem;color:#999;">(${mData.insuu}×${mData.qty})</span></td>
+                        <td class="text-right matrix-model-col" style="font-weight:bold;">${fmtYen(mData.subtotal)}</td>
+                    `;
+                } else {
+                    html += `<td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; color:#ccc;">-</td><td class="text-right matrix-model-col" style="color:#ccc;">-</td>`;
+                }
+            });
+            html += `</tr>`;
+        });
+
+        // 合計行
+        html += `</tbody><tfoot><tr>
+                    <td colspan="6" class="text-right" style="padding-right:12px;">シミュレーション合計額:</td>`;
+        selectedParents.forEach(p => {
+            html += `<td colspan="2" class="text-center matrix-model-col" style="border-left:2px solid #dcdfe6; color:var(--primary-navy); font-size:1.2rem;">${fmtYen(totals[p.id])}</td>`;
+        });
+        html += `</tr></tfoot>`;
+    }
+    
+    html += `</table></div>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// 📅 計画表 (カレンダー＆在庫管理マトリクス)
 // ==========================================
 function renderPlanScheduleView() {
     const container = document.getElementById("view-plan-content");
@@ -499,43 +663,37 @@ function renderPlanScheduleView() {
     let minDate = null;
     let maxDate = null;
     
-    // 1. リユース部品を持つ機種と、日付の範囲を抽出
+    // 1. 各機種のリユース部品を抽出
     appData.parents.forEach(p => {
-        if(!p.startDate) return;
+        if(!p.startDate || !p.endDate) return;
         
         let reuseUnits = [];
         if (p.parts) {
             p.parts.forEach(part => {
                 part.units.forEach(unit => {
-                    if (unit.choice === 'reuse') {
-                        reuseUnits.push(unit);
-                    }
+                    if (unit.choice === 'reuse') reuseUnits.push(unit);
                 });
             });
         }
         
         if (reuseUnits.length > 0) {
-            planData.push({
-                parentName: p.name,
-                startDate: p.startDate,
-                units: reuseUnits
-            });
+            planData.push({ parentName: p.name, startDate: p.startDate, endDate: p.endDate, units: reuseUnits });
             
-            let d = new Date(p.startDate);
-            if(!minDate || d < minDate) minDate = new Date(d);
-            if(!maxDate || d > maxDate) maxDate = new Date(d);
+            let sd = new Date(p.startDate);
+            let ed = new Date(p.endDate);
+            if(!minDate || sd < minDate) minDate = new Date(sd);
+            if(!maxDate || ed > maxDate) maxDate = new Date(ed);
         }
     });
 
     if (planData.length === 0) {
-        container.innerHTML = `<p style="text-align:center; padding:40px; color:#999; border:1px solid var(--border-color); border-radius:6px; background:#fff;">リユース部品が設定されている、または「使用期間（開始日）」が設定されている機種がありません。</p>`;
+        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">リユース部品が設定されている、または使用期間（開始日・終了日）が設定されている機種がありません。</div>`;
         return;
     }
 
-    // 2. 日付リストの生成（最小開始日の月の1日から、最大開始日の月の末日まで）
+    // 2. カレンダーの生成 (最小開始日 〜 最大終了日)
     let start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
     let end = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); 
-    
     let dateList = [];
     let curr = new Date(start);
     while(curr <= end) {
@@ -543,31 +701,50 @@ function renderPlanScheduleView() {
         curr.setDate(curr.getDate() + 1);
     }
 
+    // 3. 在庫管理用の部品リストをマスターから取得
+    let stockTrackingMap = new Map();
+    appData.masterParts.forEach(m => {
+        if (m.code && m.partName && m.partName.includes('リユース')) {
+            stockTrackingMap.set(m.code, { partName: m.partName, initialStock: m.stock || 0, runningStock: m.stock || 0 });
+        }
+    });
+
     const youbi = ['日', '月', '火', '水', '木', '金', '土'];
 
-    // 3. HTMLの組み立て
+    // 4. ヘッダー生成
     let html = `
-        <div style="max-height: 700px; overflow-y: auto; overflow-x: auto; border: 1px solid #333;">
-            <table class="plan-matrix-table">
-                <thead>
+        <div class="table-card" style="max-height: 700px; overflow-y: auto;">
+            <table class="plan-table">
+                <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
                         <th colspan="2">機種</th>
     `;
     planData.forEach(p => { html += `<th colspan="${p.units.length}">${p.parentName}</th>`; });
     
+    // 在庫エリアのヘッダー
+    if(stockTrackingMap.size > 0) {
+        html += `<th colspan="${stockTrackingMap.size * 2}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
+    }
+    
     html += `</tr><tr><th colspan="2">品番コード</th>`;
     planData.forEach(p => {
         p.units.forEach(u => { html += `<th>${u.code || ''}</th>`; });
     });
+    stockTrackingMap.forEach((v, code) => {
+        html += `<th colspan="2" style="background-color:#163c5a; border-left:2px solid #fff;">${code}</th>`;
+    });
     
-    html += `</tr><tr><th style="min-width:110px;">年月日</th><th style="min-width:50px;">曜日</th>`;
+    html += `</tr><tr><th style="min-width:130px;">年月日</th><th style="min-width:50px;">曜日</th>`;
     planData.forEach(p => {
         p.units.forEach(u => { html += `<th>${u.partName || ''}</th>`; });
+    });
+    stockTrackingMap.forEach((v, code) => {
+        html += `<th style="background-color:#163c5a; border-left:2px solid #fff;">${v.partName}</th><th style="background-color:#163c5a; color:#e6a23c;">残在庫</th>`;
     });
     
     html += `</tr></thead><tbody>`;
             
-    // 4. ボディ（日付ごとのデータ）生成
+    // 5. 日付ごとのボディと在庫計算
     dateList.forEach(d => {
         const yyyy = d.getFullYear();
         const mm = d.getMonth() + 1;
@@ -577,24 +754,44 @@ function renderPlanScheduleView() {
         const yStr = youbi[yIdx];
         const isoDate = `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
         
-        // 土日は少し背景色を変えると見やすい
-        const bg = (yIdx === 0) ? '#fff0f0' : (yIdx === 6) ? '#f0f4ff' : '#fff';
+        let rowClass = (yIdx === 0) ? 'day-sun' : (yIdx === 6) ? 'day-sat' : '';
         
-        html += `<tr style="background-color: ${bg};">
-                    <td>${dateStr}</td>
-                    <td>${yStr}</td>`;
+        html += `<tr class="${rowClass}">
+                    <td style="font-weight:bold; color:var(--text-sub);">${dateStr}</td>
+                    <td style="font-weight:bold; color:var(--text-sub);">${yStr}</td>`;
+        
+        // 当日の各機種の必要量
+        let dailyReqMap = new Map();
         
         planData.forEach(p => {
-            const isMatch = (p.startDate === isoDate);
+            const isStart = (p.startDate === isoDate);
             p.units.forEach(u => {
-                if (isMatch) {
-                    const totalQty = (u.insuu || 1) * (u.qty || 0);
-                    html += `<td style="text-align:right;">${fmtNum(totalQty)}</td>`;
-                } else {
-                    html += `<td></td>`;
+                let reqQty = 0;
+                if (isStart) {
+                    reqQty = (u.insuu || 1) * (u.qty || 0);
+                    if (u.code) {
+                        let currentReq = dailyReqMap.get(u.code) || 0;
+                        dailyReqMap.set(u.code, currentReq + reqQty);
+                    }
                 }
+                
+                if (isStart) html += `<td style="font-weight:bold; color:var(--primary-navy);">${fmtNum(reqQty)}</td>`;
+                else html += `<td></td>`;
             });
         });
+
+        // 在庫状況の更新と描画
+        stockTrackingMap.forEach((v, code) => {
+            const req = dailyReqMap.get(code) || 0;
+            v.runningStock -= req;
+            
+            const reqStr = req > 0 ? `<span style="color:#f56c6c; font-weight:bold;">-${fmtNum(req)}</span>` : '';
+            const stockClass = v.runningStock < 0 ? 'stock-alert' : '';
+            
+            html += `<td style="border-left:2px solid #ebeef5;">${reqStr}</td>`;
+            html += `<td class="${stockClass}">${fmtNum(v.runningStock)}</td>`;
+        });
+
         html += `</tr>`;
     });
     
@@ -637,12 +834,12 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
-            // ★ 操作カラムを削除し、品名カラムの中に操作ボタンを配置
+            // ★ 品名セル内に確定/編集/削除ボタンを集約
             if (uIdx === 0) {
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px;">
+                    <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;">
                         <div style="display:flex; flex-direction:column; gap:10px;">
-                            <select style="font-weight:500;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
+                            <select style="font-weight:bold; font-size:0.95rem;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
                                 ${itemNameOptions}
                             </select>
                             ${isLocked 
@@ -699,7 +896,6 @@ function renderTable() {
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
 
-            // ※ 操作カラム (td) は不要になったため削除
             tbody.appendChild(tr);
         });
     });
@@ -734,20 +930,13 @@ function addUnitRow(pIdx) {
     if (!parent || !parent.parts[pIdx]) return;
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
-    // 最初の行に登録されている単価を取得して自動コピーする
     const firstUnit = parent.parts[pIdx].units[0];
     const defaultNewPrice = firstUnit ? firstUnit.newPrice : 0;
     const defaultReusePrice = firstUnit ? firstUnit.reusePrice : 0;
 
     parent.parts[pIdx].units.push({
-        name: defaultUnit,
-        code: "",
-        partName: "",
-        choice: "reuse",
-        insuu: 1,
-        qty: 1,
-        newPrice: defaultNewPrice,    // 自動コピー
-        reusePrice: defaultReusePrice // 自動コピー
+        name: defaultUnit, code: "", partName: "", choice: "reuse",
+        insuu: 1, qty: 1, newPrice: defaultNewPrice, reusePrice: defaultReusePrice 
     });
     saveDataToFirebase();
 }
@@ -834,107 +1023,6 @@ function calculateTotals() {
     document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
     document.getElementById("kpi-savings").innerText = fmtYen(savings);
     document.getElementById("kpi-rate").innerText = rate + "%";
-}
-
-// ==========================================
-// 並べて比較モード
-// ==========================================
-function toggleCompareMode() {
-    isCompareMode = !isCompareMode;
-    const btn = document.getElementById('btn-compare');
-    
-    if (isCompareMode) {
-        btn.textContent = "個別表示に戻す";
-        btn.style.backgroundColor = "var(--primary-navy)";
-        btn.style.color = "#fff";
-        document.getElementById('single-view').style.display = 'none';
-        document.getElementById('compare-view').style.display = 'flex';
-        renderCompareView();
-    } else {
-        btn.textContent = "並べて比較";
-        btn.style.backgroundColor = "transparent";
-        btn.style.color = "var(--primary-navy)";
-        document.getElementById('single-view').style.display = 'block';
-        document.getElementById('compare-view').style.display = 'none';
-        renderTable();
-    }
-    renderParentButtons();
-}
-
-function renderCompareView() {
-    const container = document.getElementById("compare-view");
-    container.innerHTML = "";
-    if(!appData.parents) return;
-    
-    appData.parents.forEach(parent => {
-        let totalAllNew = 0; let totalCurrent = 0;
-        let tbodyHtml = "";
-        
-        if (parent.parts && parent.parts.length > 0) {
-            parent.parts.forEach(part => {
-                const rowSpan = part.units.length;
-                part.units.forEach((unit, uIdx) => {
-                    const totalQty = (unit.insuu || 1) * (unit.qty || 0);
-                    const costNew = (unit.newPrice || 0) * totalQty;
-                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-                    const costCurrent = (appliedPrice || 0) * totalQty;
-                    
-                    totalAllNew += costNew; totalCurrent += costCurrent;
-                    
-                    const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
-                    
-                    tbodyHtml += `
-                        <tr>
-                            ${uIdx === 0 ? `<td rowspan="${rowSpan}">${part.itemName || ''}</td>` : ''}
-                            <td>${unit.name || ''}</td>
-                            <td>${unit.code || ''}</td>
-                            <td>${unit.partName || ''}</td>
-                            <td>${choiceText}</td>
-                            <td class="text-center">${fmtNum(unit.insuu || 1)}</td>
-                            <td class="text-center">${fmtNum(unit.qty)}</td>
-                            <td class="text-right" style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
-                            <td class="text-right" style="font-weight:bold;">${fmtYen(costCurrent)}</td>
-                        </tr>
-                    `;
-                });
-            });
-        } else {
-            tbodyHtml = `<tr><td colspan="9" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
-        }
-
-        const savings = totalAllNew - totalCurrent;
-        const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
-
-        container.innerHTML += `
-            <div class="compare-col">
-                <h3>${parent.name}</h3>
-                <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">基準額</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalAllNew)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">シミュレーション額</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalCurrent)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">削減金額</div>
-                        <div class="kpi-value" style="font-size:1.2rem; color:#67c23a;">${fmtYen(savings)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">コスト削減率</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${rate}%</div>
-                    </div>
-                </div>
-                <table class="table-card" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-                    <thead>
-                        <tr><th style="width:12%;">品名</th><th style="width:18%;">ユニット名</th><th style="width:11%;">品番コード</th><th style="width:14%;">品番名</th><th style="width:9%;">区分</th><th style="width:7%;">員数</th><th style="width:7%;">使用数</th><th style="width:11%;">単価</th><th style="width:11%;">小計</th></tr>
-                    </thead>
-                    <tbody>${tbodyHtml}</tbody>
-                </table>
-            </div>
-        `;
-    });
 }
 </script>
 </body>
