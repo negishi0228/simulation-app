@@ -64,7 +64,7 @@
         color: var(--text-sub);
         cursor: pointer;
         border-radius: 6px 6px 0 0;
-        margin-bottom: -12px; /* overlap border */
+        margin-bottom: -12px;
         border-bottom: 4px solid transparent;
         transition: all 0.2s;
     }
@@ -85,19 +85,17 @@
         padding: 16px 20px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+        flex-direction: column;
         gap: 16px;
+        margin-bottom: 20px;
     }
 
-    /* ボタン風の親品番リスト */
     .parent-selector {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
-        flex: 1;
+        width: 100%;
     }
 
     .parent-btn {
@@ -106,27 +104,32 @@
         border-radius: 20px;
         background-color: #fff;
         color: var(--text-sub);
-        cursor: pointer;
+        cursor: grab;
         font-size: 0.9rem;
         font-weight: bold;
         transition: all 0.2s;
+        user-select: none;
     }
+    .parent-btn:active { cursor: grabbing; }
     .parent-btn.active {
         background-color: var(--primary-navy);
         color: #fff;
         border-color: var(--primary-navy);
     }
-    .parent-btn:hover:not(.active) {
-        background-color: #f5f7fa;
+    .parent-btn:hover:not(.active) { background-color: #f5f7fa; }
+    
+    /* ドラッグオーバー時のエフェクト */
+    .parent-btn.drag-over {
+        border-left: 3px solid var(--primary-navy);
+        padding-left: 14px; /* ボーダー分調整 */
     }
 
-    select, input[type="text"] {
+    select, input[type="text"], input[type="date"] {
         padding: 7px 8px;
         border: 1px solid var(--border-color);
         border-radius: 4px;
         font-size: 0.88rem;
         outline: none;
-        width: 100%;
         background-color: #fff;
     }
 
@@ -160,42 +163,30 @@
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
-
     .btn-unit-add {
         background-color: #e4e7ed; color: #1f5078; font-size: 0.8rem; font-weight: bold;
-        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #c0c4cc;
-        white-space: nowrap; flex-shrink: 0;
+        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #c0c4cc; flex-shrink: 0;
     }
     .btn-unit-add:hover { background-color: #1f5078; color: white; border-color: #1f5078; }
-
     .btn-unit-del {
         background-color: #fef0f0; color: #f56c6c; font-size: 0.8rem; font-weight: bold;
-        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2;
-        white-space: nowrap; flex-shrink: 0;
+        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2; flex-shrink: 0;
     }
     .btn-unit-del:hover { background-color: #f56c6c; color: white; border-color: #f56c6c; }
 
     /* ロック / 編集ボタン */
     .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
-    .btn-lock:hover { background-color: #5daf34; }
     .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
-    .btn-unlock:hover { background-color: #cf9236; }
     .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; width: 100%; }
 
     /* KPIカード */
-    .kpi-grid {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
-    }
-    .kpi-card {
-        background: var(--card-bg); border-radius: 6px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: var(--card-bg); border-radius: 6px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .kpi-title { font-size: 0.85rem; color: var(--text-sub); margin-bottom: 8px; font-weight: 500; }
     .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--primary-navy); }
 
     /* テーブルデザイン */
-    .table-card {
-        background: var(--card-bg); border-radius: 6px 6px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto;
-    }
+    .table-card { background: var(--card-bg); border-radius: 6px 6px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1200px; }
     thead th { background-color: var(--primary-navy); color: white; padding: 12px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; white-space: nowrap; }
     tbody td { padding: 10px 6px; border-bottom: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
@@ -204,41 +195,10 @@
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
-    /* マスター設定画面用のグリッド */
-    .master-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 24px;
-    }
-    .master-panel {
-        background: var(--card-bg);
-        border-radius: 6px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .master-panel h3 { margin-top: 0; color: var(--primary-navy); font-size: 1.2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
-    .master-table th { background-color: #e4e7ed; color: var(--text-main); }
-    .master-table { min-width: auto; }
-
-    /* 並べて比較ビュー */
-    .compare-view {
-        display: flex;
-        gap: 20px;
-        overflow-x: auto;
-        padding-bottom: 20px;
-    }
-    .compare-col {
-        min-width: 700px;
-        flex: 1;
-        background: #fff;
-        border-radius: 6px;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.1);
-        padding: 20px;
-    }
-    .compare-col h3 {
-        margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px;
-    }
-    .compare-table { min-width: auto; font-size: 0.8rem; }
+    /* 比較ビュー */
+    .compare-view { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
+    .compare-col { min-width: 700px; flex: 1; background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding: 20px; }
+    .compare-col h3 { margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px; }
 </style>
 </head>
 <body>
@@ -249,6 +209,7 @@
         <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
         <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
+            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表</button>
             <button class="tab-btn" id="tab-btn-master" onclick="switchTab('master')">⚙️ 品番リスト設定</button>
         </div>
     </div>
@@ -257,18 +218,30 @@
          タブ1: シミュレーター画面
     =========================================== -->
     <div id="view-sim" class="tab-content active">
-        <!-- 親品番選択（ボタン化） & 比較ボタン -->
+        <!-- 親品番選択（ドラッグ対応ボタン） & コントロール -->
         <div class="header-card">
             <div class="parent-selector" id="parent-button-list">
                 <!-- JSで動的にボタンを生成 -->
             </div>
-            <div style="display:flex; gap:12px;">
-                <button class="btn btn-outline" id="btn-compare" onclick="toggleCompareMode()">並べて比較</button>
-                <button class="btn btn-navy" onclick="addParent()">＋ 機種登録</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <!-- 使用期間の設定 -->
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:0.9rem; font-weight:bold; color:var(--text-sub);">📅 使用期間:</span>
+                    <input type="date" id="parent-start-date" onchange="updateParentDate('startDate', this.value)" style="width:auto; padding:5px 8px;">
+                    <span style="color:var(--text-sub);">〜</span>
+                    <input type="date" id="parent-end-date" onchange="updateParentDate('endDate', this.value)" style="width:auto; padding:5px 8px;">
+                </div>
+                
+                <!-- 操作ボタン -->
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-outline" onclick="editCurrentParentName()">✏️ 機種名を変更</button>
+                    <button class="btn btn-outline" id="btn-compare" onclick="toggleCompareMode()">並べて比較</button>
+                    <button class="btn btn-navy" onclick="addParent()">＋ 新規機種登録</button>
+                </div>
             </div>
         </div>
 
-        <!-- 個別表示モード（通常時） -->
+        <!-- 個別表示モード -->
         <div id="single-view">
             <!-- KPIカード -->
             <div class="kpi-grid">
@@ -315,28 +288,48 @@
             </div>
         </div>
 
-        <!-- 比較モード（横並び） -->
-        <div id="compare-view" class="compare-view" style="display: none;">
-            <!-- JSで各機種のカードを横並びに生成 -->
+        <!-- 比較モード -->
+        <div id="compare-view" class="compare-view" style="display: none;"></div>
+    </div>
+
+    <!-- ==========================================
+         タブ2: 計画表画面
+    =========================================== -->
+    <div id="view-plan" class="tab-content">
+        <h2 style="color:var(--primary-navy); margin-bottom: 20px; font-size:1.4rem;">📅 機種別使用計画表</h2>
+        <div class="table-card">
+            <table style="min-width: 800px;">
+                <thead>
+                    <tr>
+                        <th style="width:25%;">機種名</th>
+                        <th style="width:20%;">開始日</th>
+                        <th style="width:20%;">終了日</th>
+                        <th style="width:15%;">期間</th>
+                        <th style="width:20%;">シミュレーション額</th>
+                    </tr>
+                </thead>
+                <tbody id="plan-tbody">
+                    <!-- JSで動的に計画を描画 -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <!-- ==========================================
-         タブ2: 品番リスト設定（マスターデータ）画面
+         タブ3: 品番リスト設定（マスターデータ）画面
     =========================================== -->
     <div id="view-master" class="tab-content">
-        <div class="master-grid">
-            <!-- 部品マスター -->
-            <div class="master-panel">
-                <h3>部品マスターリスト</h3>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+            <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">部品マスターリスト</h3>
                 <div class="table-card" style="box-shadow:none; border:1px solid var(--border-color);">
-                    <table class="master-table">
+                    <table style="min-width:auto;">
                         <thead>
                             <tr>
-                                <th style="width:25%;">品名</th>
-                                <th style="width:25%;">品番コード</th>
-                                <th style="width:40%;">品番名</th>
-                                <th style="width:10%;">操作</th>
+                                <th style="width:25%; background:#e4e7ed; color:var(--text-main);">品名</th>
+                                <th style="width:25%; background:#e4e7ed; color:var(--text-main);">品番コード</th>
+                                <th style="width:40%; background:#e4e7ed; color:var(--text-main);">品番名</th>
+                                <th style="width:10%; background:#e4e7ed; color:var(--text-main);">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-parts-tbody"></tbody>
@@ -344,16 +337,14 @@
                 </div>
                 <button class="btn btn-navy" style="margin-top:12px;" onclick="addMasterPart()">＋ 品番を追加</button>
             </div>
-
-            <!-- ユニットマスター -->
-            <div class="master-panel">
-                <h3>ユニットマスターリスト</h3>
+            <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">ユニットマスター</h3>
                 <div class="table-card" style="box-shadow:none; border:1px solid var(--border-color);">
-                    <table class="master-table">
+                    <table style="min-width:auto;">
                         <thead>
                             <tr>
-                                <th style="width:80%;">ユニット名</th>
-                                <th style="width:20%;">操作</th>
+                                <th style="width:80%; background:#e4e7ed; color:var(--text-main);">ユニット名</th>
+                                <th style="width:20%; background:#e4e7ed; color:var(--text-main);">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-units-tbody"></tbody>
@@ -381,9 +372,10 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v11');
+const simRef = db.ref('simulationData_v12'); // Data version up
 
 let appData = {
     masterParts: [
@@ -401,26 +393,14 @@ let appData = {
         {
             id: "p1",
             name: "【M-001】全自動洗濯機 A-1000",
+            startDate: "2026-08-01",
+            endDate: "2029-08-01",
             parts: [
                 {
                     itemName: "AAA",
                     locked: false,
                     units: [
-                        { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
-                        { name: "三連樋", code: "1234568", partName: "AAA リユース", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: "p2",
-            name: "【M-002】全自動洗濯機 B-2000",
-            parts: [
-                {
-                    itemName: "BBB",
-                    locked: false,
-                    units: [
-                        { name: "1×4昇降", code: "", partName: "BBB リユース", choice: "reuse", qty: 1, newPrice: 18000, reusePrice: 8000 }
+                        { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 }
                     ]
                 }
             ]
@@ -430,6 +410,7 @@ let appData = {
 };
 
 let isCompareMode = false;
+let draggedParentIdx = null;
 
 // リアルタイム同期
 simRef.on('value', (snapshot) => {
@@ -440,13 +421,11 @@ simRef.on('value', (snapshot) => {
         appData = data;
         
         renderParentButtons();
+        if (isCompareMode) renderCompareView();
+        else renderTable();
         
-        if (isCompareMode) {
-            renderCompareView();
-        } else {
-            renderTable();
-        }
         renderMasterData();
+        renderPlanView();
     } else {
         saveDataToFirebase();
     }
@@ -457,11 +436,8 @@ function saveDataToFirebase() {
 }
 
 function switchTab(tabId) {
-    document.getElementById('view-sim').classList.remove('active');
-    document.getElementById('view-master').classList.remove('active');
-    document.getElementById('tab-btn-sim').classList.remove('active');
-    document.getElementById('tab-btn-master').classList.remove('active');
-
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + tabId).classList.add('active');
     document.getElementById('tab-btn-' + tabId).classList.add('active');
 }
@@ -497,84 +473,157 @@ function renderMasterData() {
         `;
     });
 }
-
-function addMasterPart() {
-    appData.masterParts.push({ itemName: "新規品名", code: "", partName: "" });
-    saveDataToFirebase();
-}
-function updateMasterPart(idx, key, val) {
-    appData.masterParts[idx][key] = val;
-    saveDataToFirebase();
-}
-function deleteMasterPart(idx) {
-    if(!confirm("削除しますか？")) return;
-    appData.masterParts.splice(idx, 1);
-    saveDataToFirebase();
-}
-function addMasterUnit() {
-    appData.masterUnits.push({ name: "新規ユニット" });
-    saveDataToFirebase();
-}
-function updateMasterUnit(idx, val) {
-    appData.masterUnits[idx].name = val;
-    saveDataToFirebase();
-}
-function deleteMasterUnit(idx) {
-    if(!confirm("削除しますか？")) return;
-    appData.masterUnits.splice(idx, 1);
-    saveDataToFirebase();
-}
+function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "" }); saveDataToFirebase(); }
+function updateMasterPart(idx, key, val) { appData.masterParts[idx][key] = val; saveDataToFirebase(); }
+function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
+function addMasterUnit() { appData.masterUnits.push({ name: "新規ユニット" }); saveDataToFirebase(); }
+function updateMasterUnit(idx, val) { appData.masterUnits[idx].name = val; saveDataToFirebase(); }
+function deleteMasterUnit(idx) { if(confirm("削除しますか？")) { appData.masterUnits.splice(idx, 1); saveDataToFirebase(); } }
 
 // ==========================================
-// シミュレーター（個別表示 / 比較モード）
+// 機種ボタン＆ドラッグアンドドロップ
 // ==========================================
-function getCurrentParent() {
-    if (!appData.parents) return null;
-    return appData.parents.find(p => p.id === appData.currentParentId) || appData.parents[0];
-}
-
-// ボタン風の親品番リスト生成
 function renderParentButtons() {
     const container = document.getElementById("parent-button-list");
     container.innerHTML = `<span style="color:var(--text-sub); font-size:0.9rem; margin-right:4px;">■ 機種：</span>`;
     
     if (!appData.parents) return;
-    appData.parents.forEach(p => {
+    appData.parents.forEach((p, idx) => {
         const btn = document.createElement("button");
-        // 比較モード中はアクティブハイライトを消す
         btn.className = "parent-btn" + (p.id === appData.currentParentId && !isCompareMode ? " active" : "");
         btn.textContent = p.name;
+        btn.draggable = true; // ドラッグ有効化
+
         btn.onclick = () => {
-            // 機種ボタンを押したら強制的に個別モードに戻す
             if(isCompareMode) toggleCompareMode();
             appData.currentParentId = p.id;
-            saveDataToFirebase(); // 再描画
+            saveDataToFirebase();
         };
+
+        // D&D イベント
+        btn.ondragstart = (e) => {
+            draggedParentIdx = idx;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => btn.style.opacity = '0.4', 0);
+        };
+        btn.ondragover = (e) => {
+            e.preventDefault();
+            btn.classList.add('drag-over');
+        };
+        btn.ondragleave = () => {
+            btn.classList.remove('drag-over');
+        };
+        btn.ondrop = (e) => {
+            e.preventDefault();
+            btn.classList.remove('drag-over');
+            if(draggedParentIdx === null || draggedParentIdx === idx) return;
+            
+            // 配列の要素を入れ替える
+            const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0];
+            appData.parents.splice(idx, 0, draggedItem);
+            saveDataToFirebase();
+        };
+        btn.ondragend = () => {
+            btn.style.opacity = '1';
+            draggedParentIdx = null;
+        };
+
         container.appendChild(btn);
     });
+
+    // 選択中機種の日付を反映
+    const curr = getCurrentParent();
+    if(curr) {
+        document.getElementById('parent-start-date').value = curr.startDate || "";
+        document.getElementById('parent-end-date').value = curr.endDate || "";
+    }
+}
+
+function updateParentDate(key, val) {
+    const curr = getCurrentParent();
+    if(!curr) return;
+    curr[key] = val;
+    saveDataToFirebase();
+}
+
+function editCurrentParentName() {
+    const curr = getCurrentParent();
+    if(!curr) return;
+    const newName = prompt("機種名を変更:", curr.name);
+    if(newName && newName.trim()) {
+        curr.name = newName.trim();
+        saveDataToFirebase();
+    }
+}
+
+function getCurrentParent() {
+    if (!appData.parents) return null;
+    return appData.parents.find(p => p.id === appData.currentParentId) || appData.parents[0];
 }
 
 function addParent() {
     const newName = prompt("新しい親品番（機種）名を入力してください:");
     if (!newName || !newName.trim()) return;
-
     const newId = "p_" + Date.now();
-    appData.parents.push({ id: newId, name: newName.trim(), parts: [] });
+    appData.parents.push({ id: newId, name: newName.trim(), parts: [], startDate: "", endDate: "" });
     appData.currentParentId = newId;
     if(isCompareMode) toggleCompareMode();
     saveDataToFirebase();
 }
-
 function deleteCurrentParent() {
     if (appData.parents.length <= 1) return alert("最低1つの機種データが必要です。");
     if (!confirm("現在選択している機種を削除しますか？")) return;
-
     appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
     appData.currentParentId = appData.parents[0].id;
     saveDataToFirebase();
 }
 
-// 並べて比較モードのトグル
+// ==========================================
+// 計画表タブ ロジック
+// ==========================================
+function renderPlanView() {
+    const tbody = document.getElementById("plan-tbody");
+    tbody.innerHTML = "";
+    if(!appData.parents) return;
+    
+    appData.parents.forEach(p => {
+        let totalCurrent = 0;
+        if(p.parts) {
+            p.parts.forEach(part => {
+                part.units.forEach(unit => {
+                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
+                    totalCurrent += (appliedPrice || 0) * (unit.qty || 0);
+                });
+            });
+        }
+
+        // 月数計算
+        let durationText = "-";
+        if(p.startDate && p.endDate) {
+            const d1 = new Date(p.startDate);
+            const d2 = new Date(p.endDate);
+            if(!isNaN(d1) && !isNaN(d2)) {
+                let months = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+                if(d2.getDate() < d1.getDate()) months--; // 日付を加味
+                durationText = months >= 0 ? `${months} ヶ月` : "設定エラー";
+            }
+        }
+
+        tbody.innerHTML += `
+            <tr>
+                <td style="font-weight:bold;">${p.name}</td>
+                <td>${p.startDate || '<span style="color:#999;">未設定</span>'}</td>
+                <td>${p.endDate || '<span style="color:#999;">未設定</span>'}</td>
+                <td>${durationText}</td>
+                <td class="text-right" style="font-weight:bold; color:var(--primary-navy);">${fmtYen(totalCurrent)}</td>
+            </tr>
+        `;
+    });
+}
+
+// ==========================================
+// 並べて比較モード
+// ==========================================
 function toggleCompareMode() {
     isCompareMode = !isCompareMode;
     const btn = document.getElementById('btn-compare');
@@ -597,17 +646,13 @@ function toggleCompareMode() {
     renderParentButtons();
 }
 
-// 比較ビューの描画（全機種を横に並べる）
 function renderCompareView() {
     const container = document.getElementById("compare-view");
     container.innerHTML = "";
-    
     if(!appData.parents) return;
     
     appData.parents.forEach(parent => {
-        let totalAllNew = 0;
-        let totalCurrent = 0;
-        
+        let totalAllNew = 0; let totalCurrent = 0;
         let tbodyHtml = "";
         
         if (parent.parts && parent.parts.length > 0) {
@@ -617,9 +662,7 @@ function renderCompareView() {
                     const costNew = (unit.newPrice || 0) * (unit.qty || 0);
                     const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
                     const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
-                    
-                    totalAllNew += costNew;
-                    totalCurrent += costCurrent;
+                    totalAllNew += costNew; totalCurrent += costCurrent;
                     
                     const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
                     
@@ -644,7 +687,7 @@ function renderCompareView() {
         const savings = totalAllNew - totalCurrent;
         const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
 
-        const colHtml = `
+        container.innerHTML += `
             <div class="compare-col">
                 <h3>${parent.name}</h3>
                 <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
@@ -665,32 +708,22 @@ function renderCompareView() {
                         <div class="kpi-value" style="font-size:1.2rem;">${rate}%</div>
                     </div>
                 </div>
-                <table class="table-card compare-table" style="width:100%; border-collapse:collapse;">
+                <table class="table-card" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
-                        <tr>
-                            <th style="width:12%;">品名</th>
-                            <th style="width:20%;">ユニット名</th>
-                            <th style="width:12%;">品番コード</th>
-                            <th style="width:15%;">品番名</th>
-                            <th style="width:10%;">区分</th>
-                            <th style="width:8%;">数</th>
-                            <th style="width:11%;">適用単価</th>
-                            <th style="width:12%;">小計</th>
-                        </tr>
+                        <tr><th style="width:12%;">品名</th><th style="width:20%;">ユニット名</th><th style="width:12%;">品番コード</th><th style="width:15%;">品番名</th><th style="width:10%;">区分</th><th style="width:8%;">数</th><th style="width:11%;">適用単価</th><th style="width:12%;">小計</th></tr>
                     </thead>
                     <tbody>${tbodyHtml}</tbody>
                 </table>
             </div>
         `;
-        container.innerHTML += colHtml;
     });
 }
 
-function getUniqueItemNames() {
-    return [...new Set(appData.masterParts.map(p => p.itemName).filter(Boolean))];
-}
+// ==========================================
+// シミュレーター（個別表示）
+// ==========================================
+function getUniqueItemNames() { return [...new Set(appData.masterParts.map(p => p.itemName).filter(Boolean))]; }
 
-// メインテーブル（個別表示）の描画
 function renderTable() {
     const parent = getCurrentParent();
     const tbody = document.getElementById("parts-tbody");
@@ -709,19 +742,13 @@ function renderTable() {
         const isLocked = !!part.locked;
         
         let itemNameOptions = `<option value="">--選択--</option>`;
-        uniqueItems.forEach(iName => {
-            itemNameOptions += `<option value="${iName}" ${part.itemName === iName ? 'selected' : ''}>${iName}</option>`;
-        });
-        if (part.itemName && !uniqueItems.includes(part.itemName)) {
-            itemNameOptions += `<option value="${part.itemName}" selected>${part.itemName}</option>`;
-        }
+        uniqueItems.forEach(iName => { itemNameOptions += `<option value="${iName}" ${part.itemName === iName ? 'selected' : ''}>${iName}</option>`; });
+        if (part.itemName && !uniqueItems.includes(part.itemName)) itemNameOptions += `<option value="${part.itemName}" selected>${part.itemName}</option>`;
 
         const linkedMasterParts = appData.masterParts.filter(m => m.itemName === part.itemName);
 
         let unitNameOptions = `<option value="">--選択--</option>`;
-        appData.masterUnits.forEach(u => {
-            unitNameOptions += `<option value="${u.name}">${u.name}</option>`;
-        });
+        appData.masterUnits.forEach(u => { unitNameOptions += `<option value="${u.name}">${u.name}</option>`; });
 
         part.units.forEach((unit, uIdx) => {
             const tr = document.createElement("tr");
@@ -730,9 +757,7 @@ function renderTable() {
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
-                        <select style="font-weight:500;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
-                            ${itemNameOptions}
-                        </select>
+                        <select style="font-weight:500;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">${itemNameOptions}</select>
                     </td>
                 `;
             }
@@ -747,11 +772,8 @@ function renderTable() {
             if (unit.partName && !linkedMasterParts.find(m => m.partName === unit.partName)) partNameOptions += `<option value="${unit.partName}" selected>${unit.partName}</option>`;
 
             let thisUnitNameOpts = unitNameOptions;
-            if (unit.name && !appData.masterUnits.find(u => u.name === unit.name)) {
-                thisUnitNameOpts += `<option value="${unit.name}" selected>${unit.name}</option>`;
-            } else {
-                thisUnitNameOpts = thisUnitNameOpts.replace(`value="${unit.name}"`, `value="${unit.name}" selected`);
-            }
+            if (unit.name && !appData.masterUnits.find(u => u.name === unit.name)) thisUnitNameOpts += `<option value="${unit.name}" selected>${unit.name}</option>`;
+            else thisUnitNameOpts = thisUnitNameOpts.replace(`value="${unit.name}"`, `value="${unit.name}" selected`);
 
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
             const subTotal = (appliedPrice || 0) * (unit.qty || 0);
@@ -759,23 +781,13 @@ function renderTable() {
             tr.innerHTML += `
                 <td>
                     <div class="unit-cell-flex">
-                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
-                            ${thisUnitNameOpts}
-                        </select>
+                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">${thisUnitNameOpts}</select>
                         ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
                         ${!isLocked ? `<button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕</button>` : ''}
                     </div>
                 </td>
-                <td>
-                    <select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">
-                        ${codeOptions}
-                    </select>
-                </td>
-                <td>
-                    <select class="text-center" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">
-                        ${partNameOptions}
-                    </select>
-                </td>
+                <td><select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">${codeOptions}</select></td>
+                <td><select class="text-center" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">${partNameOptions}</select></td>
                 <td>
                     <select style="text-align:center; font-weight:bold; ${unit.choice==='new' ? 'color:#f56c6c; background:#fef0f0;' : 'color:#67c23a; background:#f0f9eb;'}" 
                             ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
@@ -783,21 +795,9 @@ function renderTable() {
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td>
-                    <input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
-                        onfocus="this.value='${unit.qty}'" 
-                        onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
-                </td>
-                <td>
-                    <input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} 
-                        onfocus="this.value='${unit.newPrice}'" 
-                        onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)">
-                </td>
-                <td>
-                    <input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} 
-                        onfocus="this.value='${unit.reusePrice}'" 
-                        onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)">
-                </td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.qty}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.newPrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.reusePrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(appliedPrice)}</td>
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
@@ -808,8 +808,7 @@ function renderTable() {
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
                             ${isLocked 
                                 ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
-                                : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button>
-                                   <button class="btn-group-del" onclick="deletePartGroup(${pIdx})">削除</button>`
+                                : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button><button class="btn-group-del" onclick="deletePartGroup(${pIdx})">削除</button>`
                             }
                         </div>
                     </td>
@@ -833,17 +832,9 @@ function addPartGroup() {
     const parent = getCurrentParent();
     if (!parent) return;
     if (!parent.parts) parent.parts = [];
-
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
-
-    parent.parts.push({
-        itemName: defaultItem,
-        locked: false,
-        units: [
-            { name: defaultUnit, code: "", partName: "", choice: "new", qty: 1, newPrice: 0, reusePrice: 0 }
-        ]
-    });
+    parent.parts.push({ itemName: defaultItem, locked: false, units: [{ name: defaultUnit, code: "", partName: "", choice: "new", qty: 1, newPrice: 0, reusePrice: 0 }] });
     saveDataToFirebase();
 }
 
@@ -851,21 +842,15 @@ function addUnitRow(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
-
-    parent.parts[pIdx].units.push({
-        name: defaultUnit, code: "", partName: "", choice: "reuse", qty: 1, newPrice: 0, reusePrice: 0
-    });
+    parent.parts[pIdx].units.push({ name: defaultUnit, code: "", partName: "", choice: "reuse", qty: 1, newPrice: 0, reusePrice: 0 });
     saveDataToFirebase();
 }
 
 function deleteUnitRow(pIdx, uIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
-    
     parent.parts[pIdx].units.splice(uIdx, 1);
-    if (parent.parts[pIdx].units.length === 0) {
-        parent.parts.splice(pIdx, 1);
-    }
+    if (parent.parts[pIdx].units.length === 0) parent.parts.splice(pIdx, 1);
     saveDataToFirebase();
 }
 
@@ -874,10 +859,7 @@ function updatePartGroup(pIdx, key, val) {
     if (!parent || !parent.parts[pIdx]) return;
     parent.parts[pIdx][key] = val;
     if(key === 'itemName') {
-        parent.parts[pIdx].units.forEach(u => {
-            u.code = "";
-            u.partName = "";
-        });
+        parent.parts[pIdx].units.forEach(u => { u.code = ""; u.partName = ""; });
     }
     saveDataToFirebase();
 }
@@ -916,7 +898,6 @@ function deletePartGroup(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
     if (!confirm("この品名に含まれるすべてのユニットを削除しますか？")) return;
-
     parent.parts.splice(pIdx, 1);
     saveDataToFirebase();
 }
@@ -925,17 +906,14 @@ function calculateTotals() {
     const parent = getCurrentParent();
     if (!parent || !parent.parts) return;
 
-    let totalAllNew = 0;
-    let totalCurrent = 0;
+    let totalAllNew = 0; let totalCurrent = 0;
 
     parent.parts.forEach(part => {
         part.units.forEach(unit => {
             const costNew = (unit.newPrice || 0) * (unit.qty || 0);
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
             const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
-            
-            totalAllNew += costNew;
-            totalCurrent += costCurrent;
+            totalAllNew += costNew; totalCurrent += costCurrent;
         });
     });
 
@@ -944,10 +922,8 @@ function calculateTotals() {
 
     document.getElementById("kpi-all-new").innerText = fmtYen(totalAllNew);
     document.getElementById("foot-all-new").innerText = fmtYen(totalAllNew);
-    
     document.getElementById("kpi-current").innerText = fmtYen(totalCurrent);
     document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
-    
     document.getElementById("kpi-savings").innerText = fmtYen(savings);
     document.getElementById("kpi-rate").innerText = rate + "%";
 }
