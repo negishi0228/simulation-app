@@ -128,17 +128,15 @@
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
-    /* ★ 使用区分の共通カラー設定 (シミュレーター・品番リスト・比較ビュー共通) */
+    /* ★ 使用区分の共通カラー設定 ★ */
     .select-use-type {
-        padding: 5px 4px; border-radius: 4px; font-weight: bold; border: 1px solid var(--border-color); cursor: pointer; text-align: center; font-size: 0.85rem; width: 100%;
+        padding: 5px 4px; border-radius: 4px; font-weight: bold; border: 1px solid var(--border-color); 
+        cursor: pointer; text-align: center; font-size: 0.85rem; width: 100%; outline: none;
     }
     .type-new { background-color: #fef0f0; color: #f56c6c; border-color: #fde2e2; }
     .type-reuse { background-color: #f0f9eb; color: #67c23a; border-color: #e1f3d8; }
     
-    /* 比較ビュー専用の使用区分バッジ */
-    .badge-choice {
-        display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;
-    }
+    .badge-choice { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
 
     /* スケジュール・比較ビュー専用 */
     .day-sat { background-color: #f0f4ff; } 
@@ -255,7 +253,6 @@
             ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
             ※「マスターリスト」で設定した初期在庫から、各機種の開始日に合わせて必要数が自動で引き落とされます。
         </p>
-        
         <div id="view-plan-content"></div>
     </div>
 
@@ -307,7 +304,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// ★ Firebase 設定情報 ★
+// ★ 提供いただいた Firebase 設定情報 ★
 const firebaseConfig = {
   apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
   authDomain: "resim-3c978.firebaseapp.com",
@@ -321,8 +318,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データがリセットされないよう保存先名を固定化 ★
-const simRef = db.ref('simulationData_main');
+// ★ バージョンをv18に変更し、古いデータを強制リセット（クリーンな状態に） ★
+const simRef = db.ref('simulationData_v18');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
 let isCompareMode = false;
@@ -986,16 +983,15 @@ function addPartGroup() {
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
+    // ★ マスターから最初の使用区分を引いておく
+    const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
+    const defaultChoice = (firstMatch && firstMatch.choice) ? firstMatch.choice : "new";
+    
     parent.parts.push({
         itemName: defaultItem,
         locked: false,
-        units: [{ name: defaultUnit, code: "", partName: "", choice: "new", insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
+        units: [{ name: defaultUnit, code: "", partName: "", choice: defaultChoice, insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
     });
-    
-    const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
-    if(firstMatch && firstMatch.choice) {
-        parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
-    }
     
     saveDataToFirebase();
 }
@@ -1006,11 +1002,12 @@ function addUnitRow(pIdx) {
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
     const firstUnit = parent.parts[pIdx].units[0];
+    const defaultChoice = firstUnit ? firstUnit.choice : "new";
     const defaultNewPrice = firstUnit ? firstUnit.newPrice : 0;
     const defaultReusePrice = firstUnit ? firstUnit.reusePrice : 0;
 
     parent.parts[pIdx].units.push({
-        name: defaultUnit, code: "", partName: "", choice: "reuse",
+        name: defaultUnit, code: "", partName: "", choice: defaultChoice,
         insuu: 1, qty: 1, newPrice: defaultNewPrice, reusePrice: defaultReusePrice 
     });
     saveDataToFirebase();
@@ -1034,7 +1031,7 @@ function updatePartGroup(pIdx, key, val) {
             u.code = ""; 
             u.partName = ""; 
             if(firstMatch && firstMatch.choice) {
-                u.choice = firstMatch.choice;
+                u.choice = firstMatch.choice; // ★ 自動セット
             }
         });
     }
@@ -1052,7 +1049,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.code === val);
         if(match) {
             unit.partName = match.partName;
-            if(match.choice) unit.choice = match.choice;
+            unit.choice = match.choice || 'new'; // ★ 自動セット
         } else if(val === "") {
             unit.partName = "";
         }
@@ -1060,7 +1057,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.partName === val);
         if(match) {
             unit.code = match.code;
-            if(match.choice) unit.choice = match.choice;
+            unit.choice = match.choice || 'new'; // ★ 自動セット
         } else if(val === "") {
             unit.code = "";
         }
