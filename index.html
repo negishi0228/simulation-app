@@ -33,11 +33,17 @@
     /* 最上段タイトル & タブ */
     .app-header {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+        flex-direction: column;
+        gap: 16px;
         border-bottom: 2px solid var(--border-color);
         margin-bottom: 20px;
         padding-bottom: 10px;
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .app-title {
@@ -78,9 +84,7 @@
     }
     .parent-btn:active { cursor: grabbing; }
     .parent-btn.active { background-color: var(--primary-navy); color: #fff; border-color: var(--primary-navy); }
-    /* 比較モード選択時 */
     .parent-btn.compare-selected { background-color: #e6a23c; color: #fff; border-color: #e6a23c; }
-    
     .parent-btn:hover:not(.active):not(.compare-selected) { background-color: #f5f7fa; }
     .parent-btn.drag-over { border-left: 3px solid var(--primary-navy); padding-left: 14px; }
 
@@ -124,21 +128,31 @@
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
-    /* スケジュール（計画表）専用 */
+    /* スケジュール・比較ビュー専用 */
     .day-sat { background-color: #f0f4ff; } 
     .day-sun { background-color: #fff0f0; } 
     .stock-alert { color: #f56c6c; font-weight: bold; background-color: #fff0f0; }
-    
-    /* マトリクス比較表専用 */
     .matrix-model-col { background-color: #f9fbfd; }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 最上段タイトルとタブナビゲーション -->
+    <!-- 最上段タイトルとタブナビゲーション、同期トグルボタン -->
     <div class="app-header">
-        <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
+        <div class="header-top-row">
+            <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
+            
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div id="update-notification" style="display:none; background-color:#e6a23c; color:white; padding:6px 16px; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15);" onclick="applyPendingData()">
+                    🔄 新しい更新があります（クリックで反映）
+                </div>
+                <button id="btn-sync-toggle" class="btn" style="background-color: #eefbf1; color: #34c759; border: 2px solid #34c759; padding: 6px 16px; font-size: 0.85rem; border-radius: 4px;" onclick="toggleAutoSync()">
+                    ● リアルタイム同期：ON
+                </button>
+            </div>
+        </div>
+        
         <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
             <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表 (在庫管理)</button>
@@ -218,9 +232,7 @@
         </div>
 
         <!-- 比較モード（マトリクス） -->
-        <div id="compare-view" style="display: none;">
-            <!-- JSでマトリクス表を描画 -->
-        </div>
+        <div id="compare-view" style="display: none;"></div>
     </div>
 
     <!-- ==========================================
@@ -232,10 +244,7 @@
             ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
             ※「マスターリスト」で設定した初期在庫から、各機種の開始日に合わせて必要数が自動で引き落とされます。
         </p>
-        
-        <div id="view-plan-content">
-            <!-- JSで動的に計画表を描画 -->
-        </div>
+        <div id="view-plan-content"></div>
     </div>
 
     <!-- ==========================================
@@ -298,28 +307,65 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-// データ保持のための参照先固定（在庫機能対応 v15）
-const simRef = db.ref('simulationData_v15');
+// データ保持のための参照先固定（v16）
+const simRef = db.ref('simulationData_v16');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
 let isCompareMode = false;
 let compareSelectedIds = new Set();
 let draggedParentIdx = null;
 
-// リアルタイム同期
+// 自動同期機能の変数
+let isAutoSync = true;
+let isLocalUpdate = false;
+let pendingData = null;
+
+// 自動同期ON/OFF 切り替え
+function toggleAutoSync() {
+    isAutoSync = !isAutoSync;
+    const btn = document.getElementById('btn-sync-toggle');
+    if (isAutoSync) {
+        btn.innerHTML = "● リアルタイム同期：ON";
+        btn.style.borderColor = "#34c759";
+        btn.style.color = "#34c759";
+        btn.style.backgroundColor = "#eefbf1";
+        if (pendingData) applyPendingData();
+    } else {
+        btn.innerHTML = "⏸ リアルタイム同期：OFF (一時停止)";
+        btn.style.borderColor = "#f56c6c";
+        btn.style.color = "#f56c6c";
+        btn.style.backgroundColor = "#fff0f0";
+    }
+}
+
+function applyPendingData() {
+    if (pendingData) {
+        appData = pendingData;
+        pendingData = null;
+        document.getElementById('update-notification').style.display = 'none';
+        renderAllViews();
+    }
+}
+
+// リアルタイム同期リスナー
 simRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
         if(!data.masterParts) data.masterParts = [];
         if(!data.masterUnits) data.masterUnits = [];
-        appData = data;
         
-        renderParentButtons();
-        if (isCompareMode) renderMatrixCompareView();
-        else renderTable();
-        
-        renderMasterData();
-        renderPlanScheduleView();
+        // 自分が保存した時、または自動同期ONの時だけ描画
+        if (isAutoSync || isLocalUpdate) {
+            appData = data;
+            isLocalUpdate = false;
+            pendingData = null;
+            document.getElementById('update-notification').style.display = 'none';
+            renderAllViews();
+        } else {
+            // 自動同期OFF中に他人が更新した場合
+            pendingData = data;
+            document.getElementById('update-notification').style.display = 'block';
+        }
     } else {
         appData = getInitialSampleData();
         saveDataToFirebase();
@@ -360,7 +406,10 @@ function getInitialSampleData() {
     };
 }
 
-function saveDataToFirebase() { simRef.set(appData); }
+function saveDataToFirebase() {
+    isLocalUpdate = true;
+    simRef.set(appData);
+}
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -372,8 +421,17 @@ function switchTab(tabId) {
 function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
+// 各画面の一斉描画
+function renderAllViews() {
+    renderParentButtons();
+    if (isCompareMode) renderMatrixCompareView();
+    else renderTable();
+    renderMasterData();
+    renderPlanScheduleView();
+}
+
 // ==========================================
-// マスターデータロジック (在庫追加)
+// マスターデータロジック
 // ==========================================
 function renderMasterData() {
     const partsBody = document.getElementById("master-parts-tbody");
@@ -521,7 +579,7 @@ function toggleCompareMode() {
         document.getElementById('compare-instructions').style.display = 'block';
         
         compareSelectedIds.clear();
-        compareSelectedIds.add(appData.currentParentId); // 現在の機種を初期選択
+        compareSelectedIds.add(appData.currentParentId);
         
         renderParentButtons();
         renderMatrixCompareView();
@@ -550,8 +608,6 @@ function renderMatrixCompareView() {
     }
 
     const selectedParents = appData.parents.filter(p => compareSelectedIds.has(p.id));
-    
-    // 全部品を一意にリスト化
     const uniquePartsMap = new Map();
     
     selectedParents.forEach(p => {
@@ -588,22 +644,22 @@ function renderMatrixCompareView() {
             <table>
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
-                        <th rowspan="2">品名</th>
-                        <th rowspan="2">ユニット名</th>
-                        <th rowspan="2">品番コード</th>
-                        <th rowspan="2">品番名</th>
-                        <th rowspan="2">区分</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">ユニット名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">区分</th>
                         <th rowspan="2">単価</th>
     `;
     
     selectedParents.forEach(p => {
-        html += `<th colspan="2" class="matrix-model-col" style="border-left:2px solid #fff;">${p.name}</th>`;
+        html += `<th colspan="2" class="matrix-model-col" style="border-left:2px solid #fff; background-color:#163c5a;">${p.name}</th>`;
     });
     
     html += `</tr><tr>`;
     selectedParents.forEach(p => {
-        html += `<th class="matrix-model-col" style="border-left:2px solid #fff;">必要数(員数×使用数)</th>
-                 <th class="matrix-model-col">小計</th>`;
+        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#1f5078;">必要数(員数×使用数)</th>
+                 <th class="matrix-model-col" style="background-color:#1f5078;">小計</th>`;
     });
     html += `</tr></thead><tbody>`;
 
@@ -663,7 +719,6 @@ function renderPlanScheduleView() {
     let minDate = null;
     let maxDate = null;
     
-    // 1. 各機種のリユース部品を抽出
     appData.parents.forEach(p => {
         if(!p.startDate || !p.endDate) return;
         
@@ -678,7 +733,6 @@ function renderPlanScheduleView() {
         
         if (reuseUnits.length > 0) {
             planData.push({ parentName: p.name, startDate: p.startDate, endDate: p.endDate, units: reuseUnits });
-            
             let sd = new Date(p.startDate);
             let ed = new Date(p.endDate);
             if(!minDate || sd < minDate) minDate = new Date(sd);
@@ -691,7 +745,6 @@ function renderPlanScheduleView() {
         return;
     }
 
-    // 2. カレンダーの生成 (最小開始日 〜 最大終了日)
     let start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
     let end = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); 
     let dateList = [];
@@ -701,7 +754,6 @@ function renderPlanScheduleView() {
         curr.setDate(curr.getDate() + 1);
     }
 
-    // 3. 在庫管理用の部品リストをマスターから取得
     let stockTrackingMap = new Map();
     appData.masterParts.forEach(m => {
         if (m.code && m.partName && m.partName.includes('リユース')) {
@@ -711,40 +763,37 @@ function renderPlanScheduleView() {
 
     const youbi = ['日', '月', '火', '水', '木', '金', '土'];
 
-    // 4. ヘッダー生成
     let html = `
         <div class="table-card" style="max-height: 700px; overflow-y: auto;">
-            <table class="plan-table">
+            <table>
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
-                        <th colspan="2">機種</th>
+                        <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">機種</th>
     `;
-    planData.forEach(p => { html += `<th colspan="${p.units.length}">${p.parentName}</th>`; });
+    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName}</th>`; });
     
-    // 在庫エリアのヘッダー
     if(stockTrackingMap.size > 0) {
         html += `<th colspan="${stockTrackingMap.size * 2}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
     }
     
-    html += `</tr><tr><th colspan="2">品番コード</th>`;
+    html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
     planData.forEach(p => {
-        p.units.forEach(u => { html += `<th>${u.code || ''}</th>`; });
+        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
         html += `<th colspan="2" style="background-color:#163c5a; border-left:2px solid #fff;">${code}</th>`;
     });
     
-    html += `</tr><tr><th style="min-width:130px;">年月日</th><th style="min-width:50px;">曜日</th>`;
+    html += `</tr><tr><th style="min-width:130px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
     planData.forEach(p => {
-        p.units.forEach(u => { html += `<th>${u.partName || ''}</th>`; });
+        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.partName || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th style="background-color:#163c5a; border-left:2px solid #fff;">${v.partName}</th><th style="background-color:#163c5a; color:#e6a23c;">残在庫</th>`;
+        html += `<th style="background-color:#1f5078; border-left:2px solid #fff;">${v.partName}</th><th style="background-color:#1f5078; color:#e6a23c;">残在庫</th>`;
     });
     
     html += `</tr></thead><tbody>`;
             
-    // 5. 日付ごとのボディと在庫計算
     dateList.forEach(d => {
         const yyyy = d.getFullYear();
         const mm = d.getMonth() + 1;
@@ -760,7 +809,6 @@ function renderPlanScheduleView() {
                     <td style="font-weight:bold; color:var(--text-sub);">${dateStr}</td>
                     <td style="font-weight:bold; color:var(--text-sub);">${yStr}</td>`;
         
-        // 当日の各機種の必要量
         let dailyReqMap = new Map();
         
         planData.forEach(p => {
@@ -780,7 +828,6 @@ function renderPlanScheduleView() {
             });
         });
 
-        // 在庫状況の更新と描画
         stockTrackingMap.forEach((v, code) => {
             const req = dailyReqMap.get(code) || 0;
             v.runningStock -= req;
@@ -788,8 +835,8 @@ function renderPlanScheduleView() {
             const reqStr = req > 0 ? `<span style="color:#f56c6c; font-weight:bold;">-${fmtNum(req)}</span>` : '';
             const stockClass = v.runningStock < 0 ? 'stock-alert' : '';
             
-            html += `<td style="border-left:2px solid #ebeef5;">${reqStr}</td>`;
-            html += `<td class="${stockClass}">${fmtNum(v.runningStock)}</td>`;
+            html += `<td style="border-left:2px solid #ebeef5; text-align:center;">${reqStr}</td>`;
+            html += `<td class="${stockClass}" style="text-align:right; font-weight:bold; padding-right:12px;">${fmtNum(v.runningStock)}</td>`;
         });
 
         html += `</tr>`;
@@ -834,7 +881,7 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
-            // ★ 品名セル内に確定/編集/削除ボタンを集約
+            // 品名セル内に確定/編集/削除ボタンを集約
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;">
