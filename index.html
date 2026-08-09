@@ -25,8 +25,9 @@
         padding: 24px 16px;
     }
 
+    /* 項目が増えたため、コンテナの最大幅を拡張して見やすくしました */
     .container {
-        max-width: 1280px;
+        max-width: 1440px;
         margin: 0 auto;
     }
 
@@ -67,6 +68,7 @@
         border-radius: 4px;
         font-size: 0.88rem;
         outline: none;
+        width: 100%;
     }
 
     select:disabled, input:disabled {
@@ -97,7 +99,6 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 0 2px;
     }
 
     /* ＋ユニット追加ボタン */
@@ -142,10 +143,11 @@
         color: white;
         border: none;
         border-radius: 3px;
-        padding: 4px 10px;
+        padding: 5px 12px;
         cursor: pointer;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: bold;
+        width: 100%;
     }
     .btn-lock:hover { background-color: #5daf34; }
 
@@ -154,10 +156,11 @@
         color: white;
         border: none;
         border-radius: 3px;
-        padding: 4px 10px;
+        padding: 5px 12px;
         cursor: pointer;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: bold;
+        width: 100%;
     }
     .btn-unlock:hover { background-color: #cf9236; }
 
@@ -170,6 +173,7 @@
         padding: 4px 8px;
         cursor: pointer;
         font-size: 0.75rem;
+        width: 100%;
     }
 
     /* KPIカード */
@@ -205,14 +209,14 @@
         background: var(--card-bg);
         border-radius: 6px 6px 0 0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        overflow: hidden;
+        overflow-x: auto;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.88rem;
-        table-layout: fixed;
+        min-width: 1200px;
     }
 
     thead th {
@@ -222,10 +226,11 @@
         font-weight: 600;
         text-align: center;
         font-size: 0.85rem;
+        white-space: nowrap;
     }
 
     tbody td {
-        padding: 8px 6px;
+        padding: 10px 6px;
         border-bottom: 1px solid #ebeef5;
         vertical-align: middle;
         text-align: center;
@@ -237,7 +242,6 @@
         font-weight: bold;
         border: 1px solid var(--border-color);
         cursor: pointer;
-        width: 100%;
         font-size: 0.85rem;
     }
     .select-use-type.type-new {
@@ -276,7 +280,7 @@
     <div class="header-card">
         <div class="parent-selector">
             <span>■ 親品番（機種）：</span>
-            <select id="parent-select" onchange="switchParent()" style="min-width: 300px;"></select>
+            <select id="parent-select" onchange="switchParent()" style="min-width: 300px; width:auto;"></select>
         </div>
         <button class="btn btn-navy" onclick="addParent()">＋ 新しい親品番を登録</button>
     </div>
@@ -301,19 +305,21 @@
         </div>
     </div>
 
-    <!-- 3. 部品テーブル -->
+    <!-- 3. 部品テーブル (3カラム復活＆レイアウト最適化) -->
     <div class="table-card">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 13%;">品名</th>
-                    <th style="width: 250px;">ユニット名</th>
-                    <th style="width: 110px;">品番コード</th>
-                    <th style="width: 13%;">品番名</th>
-                    <th style="width: 95px;">使用区分</th>
+                    <th style="width: 9%;">品名</th>
+                    <th style="width: 17%;">ユニット名</th>
+                    <th style="width: 100px;">品番コード</th>
+                    <th style="width: 11%;">品番名</th>
+                    <th style="width: 90px;">使用区分</th>
                     <th style="width: 70px;">使用数</th>
-                    <th style="width: 120px;">単価</th>
-                    <th style="width: 120px;">小計</th>
+                    <th style="width: 105px;">新品単価</th>
+                    <th style="width: 105px;">リユース単価</th>
+                    <th style="width: 105px;">適用単価</th>
+                    <th style="width: 110px;">小計</th>
                     <th style="width: 90px;">操作</th>
                 </tr>
             </thead>
@@ -323,6 +329,8 @@
             <tfoot>
                 <tr>
                     <td colspan="6" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
+                    <td id="foot-all-new" style="text-align: center;">¥0</td>
+                    <td style="text-align: center;">-</td>
                     <td style="text-align: center;">-</td>
                     <td id="foot-current" style="text-align: center;">¥0</td>
                     <td></td>
@@ -351,9 +359,11 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v8');
+// 構造が変わったためDBの保存先を更新（v9）
+const simRef = db.ref('simulationData_v9');
 
 let appData = {
     parents: [
@@ -365,15 +375,15 @@ let appData = {
                     itemName: "給水ユニット",
                     locked: false,
                     units: [
-                        { name: "AAAユニット", code: "P-10001", partName: "給水バルブ", choice: "new", qty: 2, price: 12000 },
-                        { name: "BBBユニット", code: "P-10002", partName: "排水バルブ", choice: "reuse", qty: 1, price: 5000 }
+                        { name: "AAAユニット", code: "P-10001", partName: "給水バルブ", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
+                        { name: "BBBユニット", code: "P-10002", partName: "排水バルブ", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
                     ]
                 },
                 {
                     itemName: "モータユニット",
                     locked: false,
                     units: [
-                        { name: "CCCユニット", code: "P-10003", partName: "駆動モータ", choice: "reuse", qty: 1, price: 8000 }
+                        { name: "CCCユニット", code: "P-10003", partName: "駆動モータ", choice: "reuse", qty: 1, newPrice: 18000, reusePrice: 8000 }
                     ]
                 }
             ]
@@ -446,7 +456,7 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
         calculateTotals();
         return;
     }
@@ -463,15 +473,16 @@ function renderTable() {
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
-                        <input type="text" class="text-center" style="width:100%; font-weight:500;" value="${part.itemName || ''}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)" placeholder="例: 給水ユニット">
+                        <input type="text" class="text-center" style="font-weight:500;" value="${part.itemName || ''}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)" placeholder="例: 給水">
                     </td>
                 `;
             }
 
-            const subTotal = (unit.price || 0) * (unit.qty || 0);
+            const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
+            const subTotal = (appliedPrice || 0) * (unit.qty || 0);
 
             tr.innerHTML += `
-                <!-- ユニット名 (+ボタン & ✕ボタンをユニット名のすぐ右に配置) -->
+                <!-- ユニット名 (+ボタン & ✕ボタン) -->
                 <td>
                     <div class="unit-cell-flex">
                         <input type="text" style="flex:1; min-width:0;" value="${unit.name}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
@@ -481,11 +492,11 @@ function renderTable() {
                 </td>
                 <!-- 品番コード -->
                 <td>
-                    <input type="text" class="text-center" style="width:100%; letter-spacing:0.03em;" value="${unit.code || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'code', this.value)">
+                    <input type="text" class="text-center" style="letter-spacing:0.03em;" value="${unit.code || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'code', this.value)">
                 </td>
                 <!-- 品番名 -->
                 <td>
-                    <input type="text" class="text-center" style="width:100%;" value="${unit.partName || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'partName', this.value)">
+                    <input type="text" class="text-center" value="${unit.partName || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'partName', this.value)">
                 </td>
                 <!-- 使用区分 -->
                 <td>
@@ -496,25 +507,33 @@ function renderTable() {
                 </td>
                 <!-- 使用数 -->
                 <td>
-                    <input type="text" class="text-center" style="width:100%;" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
+                    <input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.qty}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
                 </td>
-                <!-- 単価 -->
+                <!-- 新品単価 -->
                 <td>
-                    <input type="text" class="text-right" style="width:100%; font-weight:500;" value="${fmtYen(unit.price)}" ${isLocked ? 'disabled' : ''} 
-                        onfocus="this.value='${unit.price}'" 
-                        onblur="updateUnit(${pIdx}, ${uIdx}, 'price', this.value)">
+                    <input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} 
+                        onfocus="this.value='${unit.newPrice}'" 
+                        onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)">
                 </td>
+                <!-- リユース単価 -->
+                <td>
+                    <input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} 
+                        onfocus="this.value='${unit.reusePrice}'" 
+                        onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)">
+                </td>
+                <!-- 適用単価 -->
+                <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(appliedPrice)}</td>
                 <!-- 小計 -->
-                <td style="font-weight:bold;">${fmtYen(subTotal)}</td>
+                <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
 
             // 右端「操作」カラム: グループ全体の確定/編集と全体削除ボタン
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
-                        <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
                             ${isLocked 
                                 ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
                                 : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button>
@@ -548,7 +567,7 @@ function addPartGroup() {
         itemName: "新規パーツ",
         locked: false,
         units: [
-            { name: "ユニットA", code: "P-1000" + (1 + parent.parts.length), partName: "新規部品", choice: "new", qty: 1, price: 10000 }
+            { name: "ユニットA", code: "P-1000" + (1 + parent.parts.length), partName: "新規部品", choice: "new", qty: 1, newPrice: 10000, reusePrice: 5000 }
         ]
     });
     saveDataToFirebase();
@@ -564,7 +583,8 @@ function addUnitRow(pIdx) {
         partName: "追加部品",
         choice: "reuse",
         qty: 1,
-        price: 5000
+        newPrice: 10000,
+        reusePrice: 5000
     });
     saveDataToFirebase();
 }
@@ -618,16 +638,26 @@ function calculateTotals() {
 
     parent.parts.forEach(part => {
         part.units.forEach(unit => {
-            const cost = (unit.price || 0) * (unit.qty || 0);
-            totalCurrent += cost;
-            // 簡易的に新品コストとして集計していますが、要件に応じて変更可能です
-            totalAllNew += cost;
+            const costNew = (unit.newPrice || 0) * (unit.qty || 0);
+            const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
+            const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
+            
+            totalAllNew += costNew;
+            totalCurrent += costCurrent;
         });
     });
 
+    const savings = totalAllNew - totalCurrent;
+    const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
+
+    document.getElementById("kpi-all-new").innerText = fmtYen(totalAllNew);
+    document.getElementById("foot-all-new").innerText = fmtYen(totalAllNew);
+    
     document.getElementById("kpi-current").innerText = fmtYen(totalCurrent);
     document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
-    document.getElementById("kpi-all-new").innerText = fmtYen(totalAllNew);
+    
+    document.getElementById("kpi-savings").innerText = fmtYen(savings);
+    document.getElementById("kpi-rate").innerText = rate + "%";
 }
 </script>
 </body>
