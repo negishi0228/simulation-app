@@ -102,9 +102,9 @@
     .btn-unit-del:hover { background-color: #f56c6c; color: white; border-color: #f56c6c; }
 
     /* ロック / 編集ボタン */
-    .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
-    .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
-    .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; width: 100%; margin-top:6px; }
+    .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; }
+    .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; }
+    .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; width: 100%; text-align: center; margin-top: 0; }
 
     /* KPIカード */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -113,7 +113,7 @@
     .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--primary-navy); }
 
     /* テーブルデザイン */
-    .table-card { background: var(--card-bg); border-radius: 6px 6px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
+    .table-card { background: var(--card-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1240px; }
     thead th { background-color: var(--primary-navy); color: white; padding: 12px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; white-space: nowrap; }
     tbody td { padding: 10px 4px; border-bottom: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
@@ -128,13 +128,16 @@
     .compare-col { min-width: 750px; flex: 1; background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding: 20px; }
     .compare-col h3 { margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px; }
 
-    /* 計画表（縦型スケジュール）用 */
-    .plan-table-container { max-height: 650px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; }
-    .plan-table { width: 100%; border-collapse: collapse; min-width: 800px; text-align: center; }
-    .plan-table th { background-color: #1f5078; color: #fff; padding: 12px; position: sticky; top: 0; z-index: 10; font-size: 0.9rem; }
-    .plan-table td { border: 1px solid #ebeef5; padding: 8px; font-size: 0.85rem; }
-    .plan-table tbody tr:hover { background-color: #f9f9fa; }
-    .active-block { background-color: rgba(31, 80, 120, 0.8); color: #fff; font-weight: bold; border-radius: 4px; padding: 4px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
+    /* 計画表（マトリックス形式）用 */
+    .plan-matrix-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 800px; }
+    .plan-matrix-table th, .plan-matrix-table td { border: 1px solid #333; padding: 6px; text-align: center; background-color: #fff; }
+    .plan-matrix-table th { font-weight: normal; }
+    
+    /* ヘッダーの固定 */
+    .plan-matrix-table thead th { position: sticky; z-index: 10; box-shadow: inset 0 0 0 1px #333; border: none; }
+    .plan-matrix-table thead tr:nth-child(1) th { top: 0; }
+    .plan-matrix-table thead tr:nth-child(2) th { top: 31px; }
+    .plan-matrix-table thead tr:nth-child(3) th { top: 62px; }
 </style>
 </head>
 <body>
@@ -145,7 +148,7 @@
         <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
         <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
-            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表 (スケジュール)</button>
+            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表</button>
             <button class="tab-btn" id="tab-btn-master" onclick="switchTab('master')">⚙️ 品番リスト設定</button>
         </div>
     </div>
@@ -184,18 +187,17 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 10%;">品名</th>
-                            <th style="width: 15%;">ユニット名</th>
+                            <th style="width: 14%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/編集操作)</span></th>
+                            <th style="width: 17%;">ユニット名</th>
                             <th style="width: 110px;">品番コード</th>
                             <th style="width: 12%;">品番名</th>
-                            <th style="width: 80px;">使用区分</th>
-                            <th style="width: 60px;">員数</th> <!-- NEW -->
+                            <th style="width: 85px;">使用区分</th>
+                            <th style="width: 60px;">員数</th>
                             <th style="width: 60px;">使用数</th>
                             <th style="width: 95px;">新品単価</th>
                             <th style="width: 95px;">リユース単価</th>
                             <th style="width: 95px;">適用単価</th>
                             <th style="width: 100px;">小計</th>
-                            <th style="width: 80px;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="parts-tbody"></tbody>
@@ -206,7 +208,6 @@
                             <td style="text-align: center;">-</td>
                             <td style="text-align: center;">-</td>
                             <td id="foot-current" style="text-align: center;">¥0</td>
-                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -222,25 +223,17 @@
     </div>
 
     <!-- ==========================================
-         タブ2: 計画表（縦型スケジュール）画面
+         タブ2: 計画表（マトリックス）画面
     =========================================== -->
     <div id="view-plan" class="tab-content">
-        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 機種別 使用スケジュール（リユース品被り確認）</h2>
+        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 リユース部品 使用開始スケジュール</h2>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 16px;">
-            ※青いブロックが重なっている期間は、複数の機種が同時に稼働するためリユース部品が不足しやすくなります。
+            ※使用区分が「リユース」に設定されている部品のみ表示されます。<br>
+            ※機種の「使用期間（開始日）」に合致する日付に、手配必要数（員数×使用数）が表示されます。
         </p>
         
-        <div class="plan-table-container">
-            <table class="plan-table">
-                <thead>
-                    <tr id="plan-thead-tr">
-                        <!-- JSで動的にヘッダー(年月・各機種名・合計稼働数)を生成 -->
-                    </tr>
-                </thead>
-                <tbody id="plan-tbody">
-                    <!-- JSで動的にスケジュールブロックを描画 -->
-                </tbody>
-            </table>
+        <div id="view-plan-content">
+            <!-- JSで動的に計画表を描画 -->
         </div>
     </div>
 
@@ -304,26 +297,38 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v13'); // バージョン更新（員数追加版）
+const simRef = db.ref('simulationData_v14'); // バージョン更新
 
 let appData = {
     masterParts: [
         { itemName: "AAA", code: "1234567", partName: "AAA 新品" },
         { itemName: "AAA", code: "1234568", partName: "AAA リユース" },
         { itemName: "BBB", code: "1234569", partName: "BBB 新品" },
-        { itemName: "BBB", code: "", partName: "BBB リユース" }
+        { itemName: "BBB", code: "1234570", partName: "BBB リユース" }
     ],
     masterUnits: [
         { name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }
     ],
     parents: [
         {
-            id: "p1", name: "【M-001】全自動洗濯機 A-1000", startDate: "2026-08-01", endDate: "2029-08-01",
+            id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2029-08-01",
             parts: [
                 {
                     itemName: "AAA", locked: false,
                     units: [
-                        { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", insuu: 1, qty: 2, newPrice: 12000, reusePrice: 5000 }
+                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
+                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2029-08-01",
+            parts: [
+                {
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 500, newPrice: 12000, reusePrice: 5000 }
                     ]
                 }
             ]
@@ -348,7 +353,7 @@ simRef.on('value', (snapshot) => {
         else renderTable();
         
         renderMasterData();
-        renderPlanScheduleView(); // 新しい縦型スケジュールの描画
+        renderPlanScheduleView(); // 新計画表の描画
     } else {
         saveDataToFirebase();
     }
@@ -467,7 +472,7 @@ function getCurrentParent() {
 }
 
 function addParent() {
-    const newName = prompt("新しい親品番（機種）名を入力してください:");
+    const newName = prompt("新しい機種名を入力してください:");
     if (!newName || !newName.trim()) return;
     const newId = "p_" + Date.now();
     appData.parents.push({ id: newId, name: newName.trim(), parts: [], startDate: "", endDate: "" });
@@ -485,189 +490,116 @@ function deleteCurrentParent() {
 }
 
 // ==========================================
-// 📅 新・計画表タブ ロジック（縦型スケジュール）
+// 📅 計画表 (マトリックス形式)
 // ==========================================
 function renderPlanScheduleView() {
-    const theadContainer = document.getElementById("plan-thead-tr");
-    const tbodyContainer = document.getElementById("plan-tbody");
+    const container = document.getElementById("view-plan-content");
     
-    if(!appData.parents || appData.parents.length === 0) {
-        tbodyContainer.innerHTML = `<tr><td class="text-center" colspan="100%">機種データがありません</td></tr>`;
+    let planData = [];
+    let minDate = null;
+    let maxDate = null;
+    
+    // 1. リユース部品を持つ機種と、日付の範囲を抽出
+    appData.parents.forEach(p => {
+        if(!p.startDate) return;
+        
+        let reuseUnits = [];
+        if (p.parts) {
+            p.parts.forEach(part => {
+                part.units.forEach(unit => {
+                    if (unit.choice === 'reuse') {
+                        reuseUnits.push(unit);
+                    }
+                });
+            });
+        }
+        
+        if (reuseUnits.length > 0) {
+            planData.push({
+                parentName: p.name,
+                startDate: p.startDate,
+                units: reuseUnits
+            });
+            
+            let d = new Date(p.startDate);
+            if(!minDate || d < minDate) minDate = new Date(d);
+            if(!maxDate || d > maxDate) maxDate = new Date(d);
+        }
+    });
+
+    if (planData.length === 0) {
+        container.innerHTML = `<p style="text-align:center; padding:40px; color:#999; border:1px solid var(--border-color); border-radius:6px; background:#fff;">リユース部品が設定されている、または「使用期間（開始日）」が設定されている機種がありません。</p>`;
         return;
     }
 
-    // 1. 全機種の最小・最大日付を特定してタイムラインの長さを決定
-    let minDate = new Date("2999-12-31");
-    let maxDate = new Date("1970-01-01");
-    let hasValidDates = false;
-
-    appData.parents.forEach(p => {
-        if(p.startDate) { let d = new Date(p.startDate); if(d < minDate) minDate = d; hasValidDates = true; }
-        if(p.endDate) { let d = new Date(p.endDate); if(d > maxDate) maxDate = d; hasValidDates = true; }
-    });
-
-    if(!hasValidDates) {
-        minDate = new Date();
-        maxDate = new Date(); maxDate.setFullYear(maxDate.getFullYear() + 1);
-    }
-
-    // 月初・月末に正規化
-    minDate.setDate(1);
-    maxDate.setDate(28);
-
-    // 2. 月配列の生成
-    let months = [];
-    let curr = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+    // 2. 日付リストの生成（最小開始日の月の1日から、最大開始日の月の末日まで）
+    let start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    let end = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); 
     
+    let dateList = [];
+    let curr = new Date(start);
     while(curr <= end) {
-        months.push({ year: curr.getFullYear(), month: curr.getMonth() + 1 });
-        curr.setMonth(curr.getMonth() + 1);
+        dateList.push(new Date(curr));
+        curr.setDate(curr.getDate() + 1);
     }
 
-    // 3. テーブルヘッダー生成 (年月 + 機種ごとの列 + 合計稼働数)
-    let thHtml = `<th style="width:100px; left:0; z-index:20;">年月</th>`;
-    appData.parents.forEach(p => { thHtml += `<th>${p.name}</th>`; });
-    thHtml += `<th style="width:120px; background:#e6a23c;">同時稼働数<br><span style="font-size:0.75rem; font-weight:normal;">(被りチェック)</span></th>`;
-    theadContainer.innerHTML = thHtml;
+    const youbi = ['日', '月', '火', '水', '木', '金', '土'];
 
-    // 4. テーブルボディ(スケジュール)生成
-    let tbodyHtml = "";
-    months.forEach(m => {
-        const monthDateStr = `${m.year}年 ${m.month}月`;
-        let rowHtml = `<tr><td style="font-weight:bold; background:#f5f7fa; position:sticky; left:0;">${monthDateStr}</td>`;
-        
-        let activeCount = 0;
-        
-        appData.parents.forEach(p => {
-            let isActive = false;
-            if(p.startDate && p.endDate) {
-                const s = new Date(p.startDate); s.setDate(1);
-                const e = new Date(p.endDate); e.setDate(28);
-                const mDate = new Date(m.year, m.month - 1, 15); // 月の真ん中で判定
-                
-                if(mDate >= s && mDate <= e) isActive = true;
-            }
+    // 3. HTMLの組み立て
+    let html = `
+        <div style="max-height: 700px; overflow-y: auto; overflow-x: auto; border: 1px solid #333;">
+            <table class="plan-matrix-table">
+                <thead>
+                    <tr>
+                        <th colspan="2">機種</th>
+    `;
+    planData.forEach(p => { html += `<th colspan="${p.units.length}">${p.parentName}</th>`; });
+    
+    html += `</tr><tr><th colspan="2">品番コード</th>`;
+    planData.forEach(p => {
+        p.units.forEach(u => { html += `<th>${u.code || ''}</th>`; });
+    });
+    
+    html += `</tr><tr><th style="min-width:110px;">年月日</th><th style="min-width:50px;">曜日</th>`;
+    planData.forEach(p => {
+        p.units.forEach(u => { html += `<th>${u.partName || ''}</th>`; });
+    });
+    
+    html += `</tr></thead><tbody>`;
             
-            if(isActive) {
-                activeCount++;
-                rowHtml += `<td><div class="active-block">稼働</div></td>`;
-            } else {
-                rowHtml += `<td></td>`;
-            }
-        });
+    // 4. ボディ（日付ごとのデータ）生成
+    dateList.forEach(d => {
+        const yyyy = d.getFullYear();
+        const mm = d.getMonth() + 1;
+        const dd = d.getDate();
+        const dateStr = `${yyyy}年${mm}月${dd}日`;
+        const yIdx = d.getDay();
+        const yStr = youbi[yIdx];
+        const isoDate = `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
         
-        // 合計稼働数セル (2台以上被りがある場合は赤字にして警告)
-        const countColor = activeCount > 1 ? "#f56c6c" : "var(--text-main)";
-        const countWeight = activeCount > 1 ? "bold" : "normal";
-        rowHtml += `<td style="color:${countColor}; font-weight:${countWeight};">${activeCount > 0 ? activeCount + ' 台' : '-'}</td></tr>`;
+        // 土日は少し背景色を変えると見やすい
+        const bg = (yIdx === 0) ? '#fff0f0' : (yIdx === 6) ? '#f0f4ff' : '#fff';
         
-        tbodyHtml += rowHtml;
-    });
-    
-    tbodyContainer.innerHTML = tbodyHtml;
-}
-
-// ==========================================
-// 並べて比較モード
-// ==========================================
-function toggleCompareMode() {
-    isCompareMode = !isCompareMode;
-    const btn = document.getElementById('btn-compare');
-    
-    if (isCompareMode) {
-        btn.textContent = "個別表示に戻す";
-        btn.style.backgroundColor = "var(--primary-navy)";
-        btn.style.color = "#fff";
-        document.getElementById('single-view').style.display = 'none';
-        document.getElementById('compare-view').style.display = 'flex';
-        renderCompareView();
-    } else {
-        btn.textContent = "並べて比較";
-        btn.style.backgroundColor = "transparent";
-        btn.style.color = "var(--primary-navy)";
-        document.getElementById('single-view').style.display = 'block';
-        document.getElementById('compare-view').style.display = 'none';
-        renderTable();
-    }
-    renderParentButtons();
-}
-
-function renderCompareView() {
-    const container = document.getElementById("compare-view");
-    container.innerHTML = "";
-    if(!appData.parents) return;
-    
-    appData.parents.forEach(parent => {
-        let totalAllNew = 0; let totalCurrent = 0;
-        let tbodyHtml = "";
+        html += `<tr style="background-color: ${bg};">
+                    <td>${dateStr}</td>
+                    <td>${yStr}</td>`;
         
-        if (parent.parts && parent.parts.length > 0) {
-            parent.parts.forEach(part => {
-                const rowSpan = part.units.length;
-                part.units.forEach((unit, uIdx) => {
-                    // ★ 員数×使用数 で合計数量を算出
-                    const totalQty = (unit.insuu || 1) * (unit.qty || 0);
-                    const costNew = (unit.newPrice || 0) * totalQty;
-                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-                    const costCurrent = (appliedPrice || 0) * totalQty;
-                    
-                    totalAllNew += costNew; totalCurrent += costCurrent;
-                    
-                    const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
-                    
-                    tbodyHtml += `
-                        <tr>
-                            ${uIdx === 0 ? `<td rowspan="${rowSpan}">${part.itemName || ''}</td>` : ''}
-                            <td>${unit.name || ''}</td>
-                            <td>${unit.code || ''}</td>
-                            <td>${unit.partName || ''}</td>
-                            <td>${choiceText}</td>
-                            <td class="text-center">${fmtNum(unit.insuu || 1)}</td>
-                            <td class="text-center">${fmtNum(unit.qty)}</td>
-                            <td class="text-right" style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
-                            <td class="text-right" style="font-weight:bold;">${fmtYen(costCurrent)}</td>
-                        </tr>
-                    `;
-                });
+        planData.forEach(p => {
+            const isMatch = (p.startDate === isoDate);
+            p.units.forEach(u => {
+                if (isMatch) {
+                    const totalQty = (u.insuu || 1) * (u.qty || 0);
+                    html += `<td style="text-align:right;">${fmtNum(totalQty)}</td>`;
+                } else {
+                    html += `<td></td>`;
+                }
             });
-        } else {
-            tbodyHtml = `<tr><td colspan="9" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
-        }
-
-        const savings = totalAllNew - totalCurrent;
-        const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
-
-        container.innerHTML += `
-            <div class="compare-col">
-                <h3>${parent.name}</h3>
-                <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">基準額</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalAllNew)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">シミュレーション額</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalCurrent)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">削減金額</div>
-                        <div class="kpi-value" style="font-size:1.2rem; color:#67c23a;">${fmtYen(savings)}</div>
-                    </div>
-                    <div class="kpi-card" style="padding:12px;">
-                        <div class="kpi-title">コスト削減率</div>
-                        <div class="kpi-value" style="font-size:1.2rem;">${rate}%</div>
-                    </div>
-                </div>
-                <table class="table-card" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
-                    <thead>
-                        <tr><th style="width:12%;">品名</th><th style="width:18%;">ユニット名</th><th style="width:11%;">品番コード</th><th style="width:14%;">品番名</th><th style="width:9%;">区分</th><th style="width:7%;">員数</th><th style="width:7%;">使用数</th><th style="width:11%;">単価</th><th style="width:11%;">小計</th></tr>
-                    </thead>
-                    <tbody>${tbodyHtml}</tbody>
-                </table>
-            </div>
-        `;
+        });
+        html += `</tr>`;
     });
+    
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
 }
 
 // ==========================================
@@ -681,7 +613,7 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
         calculateTotals();
         return;
     }
@@ -705,10 +637,22 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
+            // ★ 操作カラムを削除し、品名カラムの中に操作ボタンを配置
             if (uIdx === 0) {
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}">
-                        <select style="font-weight:500;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">${itemNameOptions}</select>
+                    <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px;">
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <select style="font-weight:500;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
+                                ${itemNameOptions}
+                            </select>
+                            ${isLocked 
+                                ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
+                                : `<div style="display:flex; gap:4px;">
+                                       <button class="btn-lock" style="flex:1;" onclick="toggleLock(${pIdx})">🔒 確定</button>
+                                       <button class="btn-group-del" style="flex:1;" onclick="deletePartGroup(${pIdx})">削除</button>
+                                   </div>`
+                            }
+                        </div>
                     </td>
                 `;
             }
@@ -726,7 +670,6 @@ function renderTable() {
             if (unit.name && !appData.masterUnits.find(u => u.name === unit.name)) thisUnitNameOpts += `<option value="${unit.name}" selected>${unit.name}</option>`;
             else thisUnitNameOpts = thisUnitNameOpts.replace(`value="${unit.name}"`, `value="${unit.name}" selected`);
 
-            // ★ 員数×使用数 の計算
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
             const totalQty = (unit.insuu || 1) * (unit.qty || 0);
             const subTotal = (appliedPrice || 0) * totalQty;
@@ -756,18 +699,7 @@ function renderTable() {
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
 
-            if (uIdx === 0) {
-                tr.innerHTML += `
-                    <td rowspan="${rowSpan}">
-                        <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
-                            ${isLocked 
-                                ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
-                                : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button><button class="btn-group-del" onclick="deletePartGroup(${pIdx})">削除</button>`
-                            }
-                        </div>
-                    </td>
-                `;
-            }
+            // ※ 操作カラム (td) は不要になったため削除
             tbody.appendChild(tr);
         });
     });
@@ -802,7 +734,7 @@ function addUnitRow(pIdx) {
     if (!parent || !parent.parts[pIdx]) return;
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
-    // ★ 最初の行に登録されている単価を取得してコピーする
+    // 最初の行に登録されている単価を取得して自動コピーする
     const firstUnit = parent.parts[pIdx].units[0];
     const defaultNewPrice = firstUnit ? firstUnit.newPrice : 0;
     const defaultReusePrice = firstUnit ? firstUnit.reusePrice : 0;
@@ -814,8 +746,8 @@ function addUnitRow(pIdx) {
         choice: "reuse",
         insuu: 1,
         qty: 1,
-        newPrice: defaultNewPrice,    // コピー反映
-        reusePrice: defaultReusePrice // コピー反映
+        newPrice: defaultNewPrice,    // 自動コピー
+        reusePrice: defaultReusePrice // 自動コピー
     });
     saveDataToFirebase();
 }
@@ -884,7 +816,6 @@ function calculateTotals() {
 
     parent.parts.forEach(part => {
         part.units.forEach(unit => {
-            // ★ 員数×使用数 の計算をKPIにも適用
             const totalQty = (unit.insuu || 1) * (unit.qty || 0);
             const costNew = (unit.newPrice || 0) * totalQty;
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
@@ -903,6 +834,107 @@ function calculateTotals() {
     document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
     document.getElementById("kpi-savings").innerText = fmtYen(savings);
     document.getElementById("kpi-rate").innerText = rate + "%";
+}
+
+// ==========================================
+// 並べて比較モード
+// ==========================================
+function toggleCompareMode() {
+    isCompareMode = !isCompareMode;
+    const btn = document.getElementById('btn-compare');
+    
+    if (isCompareMode) {
+        btn.textContent = "個別表示に戻す";
+        btn.style.backgroundColor = "var(--primary-navy)";
+        btn.style.color = "#fff";
+        document.getElementById('single-view').style.display = 'none';
+        document.getElementById('compare-view').style.display = 'flex';
+        renderCompareView();
+    } else {
+        btn.textContent = "並べて比較";
+        btn.style.backgroundColor = "transparent";
+        btn.style.color = "var(--primary-navy)";
+        document.getElementById('single-view').style.display = 'block';
+        document.getElementById('compare-view').style.display = 'none';
+        renderTable();
+    }
+    renderParentButtons();
+}
+
+function renderCompareView() {
+    const container = document.getElementById("compare-view");
+    container.innerHTML = "";
+    if(!appData.parents) return;
+    
+    appData.parents.forEach(parent => {
+        let totalAllNew = 0; let totalCurrent = 0;
+        let tbodyHtml = "";
+        
+        if (parent.parts && parent.parts.length > 0) {
+            parent.parts.forEach(part => {
+                const rowSpan = part.units.length;
+                part.units.forEach((unit, uIdx) => {
+                    const totalQty = (unit.insuu || 1) * (unit.qty || 0);
+                    const costNew = (unit.newPrice || 0) * totalQty;
+                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
+                    const costCurrent = (appliedPrice || 0) * totalQty;
+                    
+                    totalAllNew += costNew; totalCurrent += costCurrent;
+                    
+                    const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
+                    
+                    tbodyHtml += `
+                        <tr>
+                            ${uIdx === 0 ? `<td rowspan="${rowSpan}">${part.itemName || ''}</td>` : ''}
+                            <td>${unit.name || ''}</td>
+                            <td>${unit.code || ''}</td>
+                            <td>${unit.partName || ''}</td>
+                            <td>${choiceText}</td>
+                            <td class="text-center">${fmtNum(unit.insuu || 1)}</td>
+                            <td class="text-center">${fmtNum(unit.qty)}</td>
+                            <td class="text-right" style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
+                            <td class="text-right" style="font-weight:bold;">${fmtYen(costCurrent)}</td>
+                        </tr>
+                    `;
+                });
+            });
+        } else {
+            tbodyHtml = `<tr><td colspan="9" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
+        }
+
+        const savings = totalAllNew - totalCurrent;
+        const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
+
+        container.innerHTML += `
+            <div class="compare-col">
+                <h3>${parent.name}</h3>
+                <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">基準額</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalAllNew)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">シミュレーション額</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalCurrent)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">削減金額</div>
+                        <div class="kpi-value" style="font-size:1.2rem; color:#67c23a;">${fmtYen(savings)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">コスト削減率</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${rate}%</div>
+                    </div>
+                </div>
+                <table class="table-card" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                    <thead>
+                        <tr><th style="width:12%;">品名</th><th style="width:18%;">ユニット名</th><th style="width:11%;">品番コード</th><th style="width:14%;">品番名</th><th style="width:9%;">区分</th><th style="width:7%;">員数</th><th style="width:7%;">使用数</th><th style="width:11%;">単価</th><th style="width:11%;">小計</th></tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                </table>
+            </div>
+        `;
+    });
 }
 </script>
 </body>
