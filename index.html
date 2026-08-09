@@ -92,37 +92,48 @@
     }
     .btn-navy:hover { background-color: var(--navy-hover); }
 
-    /* 小さなユニット追加ボタン (+ボタン) */
+    /* ユニット名セル内のボタンエリア */
+    .unit-cell-flex {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 2px;
+    }
+
+    /* ＋ユニット追加ボタン */
     .btn-unit-add {
         background-color: #e4e7ed;
-        color: #606266;
-        font-size: 0.75rem;
+        color: #1f5078;
+        font-size: 0.8rem;
         font-weight: bold;
-        padding: 3px 7px;
+        padding: 4px 8px;
         border-radius: 4px;
         cursor: pointer;
-        border: 1px solid var(--border-color);
+        border: 1px solid #c0c4cc;
         white-space: nowrap;
         flex-shrink: 0;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
     }
-    .btn-unit-add:hover { background-color: #dcdfe6; color: var(--primary-navy); }
+    .btn-unit-add:hover { background-color: #1f5078; color: white; border-color: #1f5078; }
 
-    /* 各行のユニット削除ボタン */
+    /* ユニット個別削除（✕）ボタン */
     .btn-unit-del {
         background-color: #fef0f0;
         color: #f56c6c;
         border: 1px solid #fde2e2;
-        border-radius: 3px;
-        padding: 3px 8px;
+        border-radius: 4px;
+        padding: 4px 8px;
         cursor: pointer;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-weight: bold;
         white-space: nowrap;
+        flex-shrink: 0;
+        transition: all 0.2s;
     }
     .btn-unit-del:hover {
         background-color: #f56c6c;
         color: white;
+        border-color: #f56c6c;
     }
 
     /* ロック / 編集ボタン */
@@ -220,13 +231,6 @@
         text-align: center;
     }
 
-    .unit-cell-flex {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 0 2px;
-    }
-
     .select-use-type {
         padding: 5px 4px;
         border-radius: 4px;
@@ -297,20 +301,20 @@
         </div>
     </div>
 
-    <!-- 3. 部品テーブル (単価まとめ・品名・削除ボタン追加) -->
+    <!-- 3. 部品テーブル -->
     <div class="table-card">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 14%;">品名</th>
-                    <th style="width: 16%;">ユニット名</th>
-                    <th style="width: 120px;">品番コード</th>
-                    <th style="width: 14%;">品番名</th>
-                    <th style="width: 100px;">使用区分</th>
-                    <th style="width: 75px;">使用数</th>
-                    <th style="width: 130px;">単価</th>
-                    <th style="width: 130px;">小計</th>
-                    <th style="width: 110px;">操作</th>
+                    <th style="width: 13%;">品名</th>
+                    <th style="width: 250px;">ユニット名</th>
+                    <th style="width: 110px;">品番コード</th>
+                    <th style="width: 13%;">品番名</th>
+                    <th style="width: 95px;">使用区分</th>
+                    <th style="width: 70px;">使用数</th>
+                    <th style="width: 120px;">単価</th>
+                    <th style="width: 120px;">小計</th>
+                    <th style="width: 90px;">操作</th>
                 </tr>
             </thead>
             <tbody id="parts-tbody">
@@ -349,7 +353,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v6');
+const simRef = db.ref('simulationData_v8');
 
 let appData = {
     parents: [
@@ -467,11 +471,12 @@ function renderTable() {
             const subTotal = (unit.price || 0) * (unit.qty || 0);
 
             tr.innerHTML += `
-                <!-- ユニット名 (+ボタン付き) -->
+                <!-- ユニット名 (+ボタン & ✕ボタンをユニット名のすぐ右に配置) -->
                 <td>
                     <div class="unit-cell-flex">
                         <input type="text" style="flex:1; min-width:0;" value="${unit.name}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
                         ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
+                        ${!isLocked ? `<button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕</button>` : ''}
                     </div>
                 </td>
                 <!-- 品番コード -->
@@ -495,7 +500,7 @@ function renderTable() {
                         onfocus="this.value='${unit.qty}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
                 </td>
-                <!-- 単価 (まとめ) -->
+                <!-- 単価 -->
                 <td>
                     <input type="text" class="text-right" style="width:100%; font-weight:500;" value="${fmtYen(unit.price)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.price}'" 
@@ -505,7 +510,7 @@ function renderTable() {
                 <td style="font-weight:bold;">${fmtYen(subTotal)}</td>
             `;
 
-            // 操作カラム: 1行目の場合は全体グループのロック/削除、ロック解除時はユニット削除ボタンも各行に表示
+            // 右端「操作」カラム: グループ全体の確定/編集と全体削除ボタン
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
@@ -513,15 +518,11 @@ function renderTable() {
                             ${isLocked 
                                 ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
                                 : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button>
-                                   <button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕ 行削除</button>
-                                   <button class="btn-group-del" onclick="deletePartGroup(${pIdx})" style="margin-top:4px;">全削除</button>`
+                                   <button class="btn-group-del" onclick="deletePartGroup(${pIdx})">グループ削除</button>`
                             }
                         </div>
                     </td>
                 `;
-            } else if (!isLocked) {
-                // 2行目以降（ロック中でない場合）は行削除用の追加セル・操作ボタン
-                // ※操作TDがrowspanされているため、2行目以降の末尾セル調整
             }
 
             tbody.appendChild(tr);
@@ -573,7 +574,6 @@ function deleteUnitRow(pIdx, uIdx) {
     if (!parent || !parent.parts[pIdx]) return;
     
     parent.parts[pIdx].units.splice(uIdx, 1);
-    // ユニットが0件になったらパーツグループ自体を削除
     if (parent.parts[pIdx].units.length === 0) {
         parent.parts.splice(pIdx, 1);
     }
@@ -620,15 +620,13 @@ function calculateTotals() {
         part.units.forEach(unit => {
             const cost = (unit.price || 0) * (unit.qty || 0);
             totalCurrent += cost;
-            // リユース・新品に関わらず集計基準コストに反映
+            // 簡易的に新品コストとして集計していますが、要件に応じて変更可能です
             totalAllNew += cost;
         });
     });
 
     document.getElementById("kpi-current").innerText = fmtYen(totalCurrent);
     document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
-    
-    // 全新品基準額カード（シミュレーション全体額）
     document.getElementById("kpi-all-new").innerText = fmtYen(totalAllNew);
 }
 </script>
