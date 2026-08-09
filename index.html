@@ -89,7 +89,7 @@
     .parent-btn.drag-over { border-left: 3px solid var(--primary-navy); padding-left: 14px; }
 
     select, input[type="text"], input[type="number"], input[type="date"] {
-        padding: 7px 8px; border: 1px solid var(--border-color); border-radius: 4px;
+        padding: 7px 6px; border: 1px solid var(--border-color); border-radius: 4px;
         font-size: 0.88rem; outline: none; background-color: #fff; width: 100%;
     }
     select:disabled, input:disabled { background-color: #f5f7fa; color: #606266; cursor: not-allowed; border-color: #e4e7ed; }
@@ -119,8 +119,8 @@
 
     /* テーブルデザイン (共通) */
     .table-card { background: var(--card-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1100px; }
-    thead th { background-color: var(--primary-navy); color: white; padding: 10px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1280px; } /* 幅を1280pxに拡張 */
+    thead th { background-color: var(--primary-navy); color: white; padding: 10px 4px; font-weight: 600; text-align: center; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); }
     tbody td { padding: 10px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     tfoot tr td { background-color: #eaedf2; font-weight: bold; padding: 12px 6px; border-top: 2px solid #dcdfe6; border: 1px solid #dcdfe6; }
     
@@ -197,20 +197,21 @@
             </div>
 
             <div class="table-card">
-                <table style="min-width: 1200px;">
+                <table style="min-width: 1280px;">
                     <thead>
                         <tr>
-                            <th style="width: 14%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/削除)</span></th>
-                            <th style="width: 17%;">ユニット名</th>
+                            <!-- 各カラムの比率を調整し、ユニット名を縮小、数量と単価を拡張 -->
+                            <th style="width: 13%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/削除)</span></th>
+                            <th style="width: 14%;">ユニット名</th>
                             <th style="width: 110px;">品番コード</th>
-                            <th style="width: 14%;">品番名</th>
+                            <th style="width: 13%;">品番名</th>
                             <th style="width: 85px;">使用区分</th>
-                            <th style="width: 60px;">員数</th>
-                            <th style="width: 60px;">使用数</th>
-                            <th style="width: 95px;">新品単価</th>
-                            <th style="width: 95px;">リユース単価</th>
-                            <th style="width: 95px;">適用単価</th>
-                            <th style="width: 100px;">小計</th>
+                            <th style="width: 70px;">員数</th>
+                            <th style="width: 90px;">使用数</th>
+                            <th style="width: 105px;">新品単価</th>
+                            <th style="width: 105px;">リユース単価</th>
+                            <th style="width: 105px;">適用単価</th>
+                            <th style="width: 115px;">小計</th>
                         </tr>
                     </thead>
                     <tbody id="parts-tbody"></tbody>
@@ -244,6 +245,7 @@
             ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
             ※「マスターリスト」で設定した初期在庫から、各機種の開始日に合わせて必要数が自動で引き落とされます。
         </p>
+        
         <div id="view-plan-content"></div>
     </div>
 
@@ -294,7 +296,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// ★ Firebase 設定情報 ★
+// ★ 提供いただいた Firebase 設定情報 ★
 const firebaseConfig = {
   apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
   authDomain: "resim-3c978.firebaseapp.com",
@@ -307,8 +309,8 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-// データ保持のための参照先固定（v16）
-const simRef = db.ref('simulationData_v16');
+// データ保持のための参照先固定（v17）
+const simRef = db.ref('simulationData_v17');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
 let isCompareMode = false;
@@ -367,6 +369,7 @@ simRef.on('value', (snapshot) => {
             document.getElementById('update-notification').style.display = 'block';
         }
     } else {
+        // DBが完全に空の場合のみ初期データをセット
         appData = getInitialSampleData();
         saveDataToFirebase();
     }
@@ -515,11 +518,18 @@ function renderParentButtons() {
         container.appendChild(btn);
     });
 
+    // 入力中のフォーカスがある場合は上書きしない（勝手に書き換わるのを防ぐ）
     if (!isCompareMode) {
         const curr = getCurrentParent();
         if(curr) {
-            document.getElementById('parent-start-date').value = curr.startDate || "";
-            document.getElementById('parent-end-date').value = curr.endDate || "";
+            const startInput = document.getElementById('parent-start-date');
+            const endInput = document.getElementById('parent-end-date');
+            if(startInput && document.activeElement !== startInput) {
+                startInput.value = curr.startDate || "";
+            }
+            if(endInput && document.activeElement !== endInput) {
+                endInput.value = curr.endDate || "";
+            }
         }
     }
 }
@@ -644,12 +654,12 @@ function renderMatrixCompareView() {
             <table>
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
-                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品名</th>
-                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">ユニット名</th>
-                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>
-                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番名</th>
-                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">区分</th>
-                        <th rowspan="2">単価</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:12%;">品名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:14%;">ユニット名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:11%;">品番コード</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:14%;">品番名</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:9%;">区分</th>
+                        <th rowspan="2" style="border-right:1px solid rgba(255,255,255,0.2); width:10%;">単価</th>
     `;
     
     selectedParents.forEach(p => {
@@ -658,8 +668,8 @@ function renderMatrixCompareView() {
     
     html += `</tr><tr>`;
     selectedParents.forEach(p => {
-        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#1f5078;">必要数(員数×使用数)</th>
-                 <th class="matrix-model-col" style="background-color:#1f5078;">小計</th>`;
+        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#1f5078; width:14%;">必要数(員数×使用数)</th>
+                 <th class="matrix-model-col" style="background-color:#1f5078; width:14%;">小計</th>`;
     });
     html += `</tr></thead><tbody>`;
 
@@ -786,10 +796,10 @@ function renderPlanScheduleView() {
     
     html += `</tr><tr><th style="min-width:130px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
     planData.forEach(p => {
-        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.partName || ''}</th>`; });
+        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th style="background-color:#1f5078; border-left:2px solid #fff;">${v.partName}</th><th style="background-color:#1f5078; color:#e6a23c;">残在庫</th>`;
+        html += `<th style="background-color:#1f5078; border-left:2px solid #fff; min-width:80px;">${v.partName}</th><th style="background-color:#1f5078; color:#e6a23c; min-width:70px;">残在庫</th>`;
     });
     
     html += `</tr></thead><tbody>`;
