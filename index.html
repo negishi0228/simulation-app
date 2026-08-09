@@ -30,7 +30,7 @@
     }
 
     .container {
-        max-width: 1240px;
+        max-width: 1280px;
         margin: 0 auto;
     }
 
@@ -54,17 +54,17 @@
         font-size: 1rem;
     }
 
-    select, input[type="text"], input[type="number"] {
-        padding: 8px 12px;
+    select, input[type="text"] {
+        padding: 8px 10px;
         border: 1px solid var(--border-color);
         border-radius: 4px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         outline: none;
     }
 
     select:disabled, input:disabled {
         background-color: #f5f7fa;
-        color: #909399;
+        color: #606266;
         cursor: not-allowed;
         border-color: #e4e7ed;
     }
@@ -91,7 +91,7 @@
         color: #606266;
         font-size: 0.75rem;
         font-weight: bold;
-        padding: 4px 8px;
+        padding: 3px 7px;
         border-radius: 4px;
         cursor: pointer;
         border: 1px solid var(--border-color);
@@ -175,18 +175,20 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
+        table-layout: fixed;
     }
 
     thead th {
         background-color: var(--primary-navy);
         color: white;
-        padding: 12px 10px;
+        padding: 12px 6px;
         font-weight: 600;
         text-align: center;
+        font-size: 0.88rem;
     }
 
     tbody td {
-        padding: 12px 10px;
+        padding: 10px 6px;
         border-bottom: 1px solid #ebeef5;
         vertical-align: middle;
         text-align: center;
@@ -195,15 +197,17 @@
     .unit-cell-flex {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
     }
 
     .select-use-type {
-        padding: 6px 10px;
+        padding: 5px 6px;
         border-radius: 4px;
         font-weight: bold;
         border: 1px solid var(--border-color);
         cursor: pointer;
+        width: 100%;
+        font-size: 0.85rem;
     }
     .select-use-type.type-new {
         background-color: #fef0f0;
@@ -219,14 +223,12 @@
     tfoot tr td {
         background-color: #eaedf2;
         font-weight: bold;
-        padding: 14px 10px;
+        padding: 14px 6px;
         border-top: 2px solid #dcdfe6;
     }
 
-    .num-input {
-        width: 70px;
-        text-align: right;
-    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
 
     .row-locked {
         background-color: #fafafa;
@@ -240,7 +242,7 @@
     <div class="header-card">
         <div class="parent-selector">
             <span>■ 親品番（機種）：</span>
-            <select id="parent-select" onchange="switchParent()" style="min-width: 280px;"></select>
+            <select id="parent-select" onchange="switchParent()" style="min-width: 300px;"></select>
         </div>
         <button class="btn btn-navy" onclick="addParent()">＋ 新しい親品番を登録</button>
     </div>
@@ -265,21 +267,21 @@
         </div>
     </div>
 
-    <!-- 3. 部品テーブル -->
+    <!-- 3. 部品テーブル (バランス配置) -->
     <div class="table-card">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 10%;">品番コード</th>
+                    <th style="width: 110px;">品番コード</th> <!-- 7桁固定表示に最適 -->
                     <th style="width: 14%;">品番名</th>
                     <th style="width: 16%;">ユニット名</th>
-                    <th style="width: 10%;">使用区分</th>
-                    <th style="width: 7%;">使用数</th>
-                    <th style="width: 9%;">新品単価</th>
-                    <th style="width: 9%;">リユース単価</th>
-                    <th style="width: 9%;">適用単価</th>
-                    <th style="width: 9%;">小計</th>
-                    <th style="width: 7%;">操作</th>
+                    <th style="width: 95px;">使用区分</th>
+                    <th style="width: 75px;">使用数</th>
+                    <th style="width: 115px;">新品単価</th>
+                    <th style="width: 115px;">リユース単価</th>
+                    <th style="width: 110px;">適用単価</th>
+                    <th style="width: 115px;">小計</th>
+                    <th style="width: 80px;">操作</th>
                 </tr>
             </thead>
             <tbody id="parts-tbody">
@@ -287,7 +289,7 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="5" style="text-align: right;">合計 (機種トータル):</td>
+                    <td colspan="5" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
                     <td id="foot-all-new" style="text-align: center;">¥0</td>
                     <td style="text-align: center;">-</td>
                     <td style="text-align: center;">-</td>
@@ -309,18 +311,18 @@
 <script>
 // ★ Firebase 設定情報をご自身のものに置き換えてください ★
 const firebaseConfig = {
-  apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
-  authDomain: "resim-3c978.firebaseapp.com",
-  databaseURL: "https://resim-3c978-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "resim-3c978",
-  storageBucket: "resim-3c978.firebasestorage.app",
-  messagingSenderId: "874578438763",
-  appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v3');
+const simRef = db.ref('simulationData_v4');
 
 let appData = {
     parents: [
@@ -330,7 +332,7 @@ let appData = {
             name: "【M-001】全自動洗濯機 A-1000",
             parts: [
                 {
-                    code: "P-101",
+                    code: "P-10001",
                     name: "給水バルブ",
                     locked: false,
                     units: [
@@ -339,7 +341,7 @@ let appData = {
                     ]
                 },
                 {
-                    code: "P-102",
+                    code: "P-10002",
                     name: "駆動モータ",
                     locked: false,
                     units: [
@@ -407,6 +409,10 @@ function addParent() {
     saveDataToFirebase();
 }
 
+// ユーティリティ: 数値フォーマット関数
+function fmtNum(v) { return (v || 0).toLocaleString(); }
+function fmtYen(v) { return "¥" + fmtNum(v); }
+
 function renderTable() {
     const parent = getCurrentParent();
     const tbody = document.getElementById("parts-tbody");
@@ -429,8 +435,8 @@ function renderTable() {
             // 1行目のときのみ品番コード、品番名を表示（縦結合）
             if (uIdx === 0) {
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.code}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'code', this.value)"></td>
-                    <td rowspan="${rowSpan}"><input type="text" style="width:100%; text-align:center;" value="${part.name}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'name', this.value)"></td>
+                    <td rowspan="${rowSpan}"><input type="text" class="text-center" style="width:100%; letter-spacing:0.05em;" value="${part.code}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'code', this.value)"></td>
+                    <td rowspan="${rowSpan}"><input type="text" class="text-center" style="width:100%;" value="${part.name}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'name', this.value)"></td>
                 `;
             }
 
@@ -450,11 +456,23 @@ function renderTable() {
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="number" class="num-input" value="${unit.qty}" min="1" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
-                <td><input type="number" class="num-input" value="${unit.newPrice}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
-                <td><input type="number" class="num-input" value="${unit.reusePrice}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
-                <td style="font-weight:bold;">¥${appliedPrice.toLocaleString()}</td>
-                <td style="font-weight:bold;">¥${subTotal.toLocaleString()}</td>
+                <td>
+                    <input type="text" class="text-center" style="width:100%;" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
+                        onfocus="this.value='${unit.qty}'" 
+                        onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
+                </td>
+                <td>
+                    <input type="text" class="text-right" style="width:100%;" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} 
+                        onfocus="this.value='${unit.newPrice}'" 
+                        onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)">
+                </td>
+                <td>
+                    <input type="text" class="text-right" style="width:100%;" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} 
+                        onfocus="this.value='${unit.reusePrice}'" 
+                        onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)">
+                </td>
+                <td style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
+                <td style="font-weight:bold;">${fmtYen(subTotal)}</td>
             `;
 
             // 1行目のときのみロック/編集ボタン、操作ボタンを表示
@@ -492,7 +510,7 @@ function addPartGroup() {
     if (!parent.parts) parent.parts = [];
 
     parent.parts.push({
-        code: "P-" + (101 + parent.parts.length),
+        code: "P-1000" + (1 + parent.parts.length),
         name: "新規パーツ",
         locked: false,
         units: [
@@ -530,7 +548,9 @@ function updateUnit(pIdx, uIdx, key, val) {
     if (key === 'name' || key === 'choice') {
         parent.parts[pIdx].units[uIdx][key] = val;
     } else {
-        parent.parts[pIdx].units[uIdx][key] = parseFloat(val) || 0;
+        // カンマや¥を排除して数値化
+        const numVal = parseFloat(String(val).replace(/[^0-9.-]/g, '')) || 0;
+        parent.parts[pIdx].units[uIdx][key] = numVal;
     }
     saveDataToFirebase();
 }
@@ -562,15 +582,13 @@ function calculateTotals() {
     const savings = totalAllNew - totalCurrent;
     const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
 
-    const fmt = (v) => "¥" + Math.round(v).toLocaleString();
-
-    document.getElementById("kpi-all-new").innerText = fmt(totalAllNew);
-    document.getElementById("kpi-current").innerText = fmt(totalCurrent);
-    document.getElementById("kpi-savings").innerText = fmt(savings);
+    document.getElementById("kpi-all-new").innerText = fmtYen(totalAllNew);
+    document.getElementById("kpi-current").innerText = fmtYen(totalCurrent);
+    document.getElementById("kpi-savings").innerText = fmtYen(savings);
     document.getElementById("kpi-rate").innerText = rate + "%";
 
-    document.getElementById("foot-all-new").innerText = fmt(totalAllNew);
-    document.getElementById("foot-current").innerText = fmt(totalCurrent);
+    document.getElementById("foot-all-new").innerText = fmtYen(totalAllNew);
+    document.getElementById("foot-current").innerText = fmtYen(totalCurrent);
 }
 </script>
 </body>
