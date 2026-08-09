@@ -50,29 +50,14 @@
         gap: 8px;
     }
 
-    .tab-container {
-        display: flex;
-        gap: 8px;
-    }
-
+    .tab-container { display: flex; gap: 8px; }
     .tab-btn {
-        padding: 10px 24px;
-        font-size: 1rem;
-        font-weight: bold;
-        background-color: transparent;
-        border: none;
-        color: var(--text-sub);
-        cursor: pointer;
-        border-radius: 6px 6px 0 0;
-        margin-bottom: -12px;
-        border-bottom: 4px solid transparent;
-        transition: all 0.2s;
+        padding: 10px 24px; font-size: 1rem; font-weight: bold; background-color: transparent;
+        border: none; color: var(--text-sub); cursor: pointer; border-radius: 6px 6px 0 0;
+        margin-bottom: -12px; border-bottom: 4px solid transparent; transition: all 0.2s;
     }
     .tab-btn:hover { color: var(--primary-navy); }
-    .tab-btn.active {
-        color: var(--primary-navy);
-        border-bottom: 4px solid var(--primary-navy);
-    }
+    .tab-btn.active { color: var(--primary-navy); border-bottom: 4px solid var(--primary-navy); }
 
     /* タブコンテンツ切り替え */
     .tab-content { display: none; }
@@ -80,104 +65,46 @@
 
     /* 上部ヘッダーコントロール */
     .header-card {
-        background: var(--card-bg);
-        border-radius: 6px;
-        padding: 16px 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 20px;
+        background: var(--card-bg); border-radius: 6px; padding: 16px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+        gap: 16px; margin-bottom: 20px;
     }
 
-    .parent-selector {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        width: 100%;
-    }
+    .parent-selector { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; }
 
     .parent-btn {
-        padding: 8px 16px;
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
-        background-color: #fff;
-        color: var(--text-sub);
-        cursor: grab;
-        font-size: 0.9rem;
-        font-weight: bold;
-        transition: all 0.2s;
-        user-select: none;
+        padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 20px;
+        background-color: #fff; color: var(--text-sub); cursor: grab; font-size: 0.9rem;
+        font-weight: bold; transition: all 0.2s; user-select: none;
     }
     .parent-btn:active { cursor: grabbing; }
-    .parent-btn.active {
-        background-color: var(--primary-navy);
-        color: #fff;
-        border-color: var(--primary-navy);
-    }
+    .parent-btn.active { background-color: var(--primary-navy); color: #fff; border-color: var(--primary-navy); }
     .parent-btn:hover:not(.active) { background-color: #f5f7fa; }
-    
-    /* ドラッグオーバー時のエフェクト */
-    .parent-btn.drag-over {
-        border-left: 3px solid var(--primary-navy);
-        padding-left: 14px; /* ボーダー分調整 */
-    }
+    .parent-btn.drag-over { border-left: 3px solid var(--primary-navy); padding-left: 14px; }
 
     select, input[type="text"], input[type="date"] {
-        padding: 7px 8px;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        font-size: 0.88rem;
-        outline: none;
-        background-color: #fff;
+        padding: 7px 8px; border: 1px solid var(--border-color); border-radius: 4px;
+        font-size: 0.88rem; outline: none; background-color: #fff; width: 100%;
     }
+    select:disabled, input:disabled { background-color: #f5f7fa; color: #606266; cursor: not-allowed; border-color: #e4e7ed; }
 
-    select:disabled, input:disabled {
-        background-color: #f5f7fa;
-        color: #606266;
-        cursor: not-allowed;
-        border-color: #e4e7ed;
-    }
-
-    .btn {
-        padding: 9px 18px;
-        border-radius: 4px;
-        font-weight: bold;
-        font-size: 0.9rem;
-        cursor: pointer;
-        border: none;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-
+    .btn { padding: 9px 18px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
     .btn-navy { background-color: var(--primary-navy); color: white; }
     .btn-navy:hover { background-color: var(--navy-hover); }
-
-    .btn-outline {
-        background-color: transparent;
-        color: var(--primary-navy);
-        border: 1px solid var(--primary-navy);
-    }
+    .btn-outline { background-color: transparent; color: var(--primary-navy); border: 1px solid var(--primary-navy); }
     .btn-outline:hover { background-color: #eff6ff; }
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
-    .btn-unit-add {
-        background-color: #e4e7ed; color: #1f5078; font-size: 0.8rem; font-weight: bold;
-        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #c0c4cc; flex-shrink: 0;
-    }
+    .btn-unit-add { background-color: #e4e7ed; color: #1f5078; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #c0c4cc; flex-shrink: 0; }
     .btn-unit-add:hover { background-color: #1f5078; color: white; border-color: #1f5078; }
-    .btn-unit-del {
-        background-color: #fef0f0; color: #f56c6c; font-size: 0.8rem; font-weight: bold;
-        padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2; flex-shrink: 0;
-    }
+    .btn-unit-del { background-color: #fef0f0; color: #f56c6c; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2; flex-shrink: 0; }
     .btn-unit-del:hover { background-color: #f56c6c; color: white; border-color: #f56c6c; }
 
     /* ロック / 編集ボタン */
     .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
     .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; font-weight: bold; width: 100%; }
-    .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; width: 100%; }
+    .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 0.75rem; width: 100%; margin-top:6px; }
 
     /* KPIカード */
     .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -187,18 +114,27 @@
 
     /* テーブルデザイン */
     .table-card { background: var(--card-bg); border-radius: 6px 6px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1200px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1240px; }
     thead th { background-color: var(--primary-navy); color: white; padding: 12px 6px; font-weight: 600; text-align: center; font-size: 0.85rem; white-space: nowrap; }
-    tbody td { padding: 10px 6px; border-bottom: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
+    tbody td { padding: 10px 4px; border-bottom: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     tfoot tr td { background-color: #eaedf2; font-weight: bold; padding: 14px 6px; border-top: 2px solid #dcdfe6; }
+    
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
     /* 比較ビュー */
     .compare-view { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
-    .compare-col { min-width: 700px; flex: 1; background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding: 20px; }
+    .compare-col { min-width: 750px; flex: 1; background: #fff; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); padding: 20px; }
     .compare-col h3 { margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px; }
+
+    /* 計画表（縦型スケジュール）用 */
+    .plan-table-container { max-height: 650px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; }
+    .plan-table { width: 100%; border-collapse: collapse; min-width: 800px; text-align: center; }
+    .plan-table th { background-color: #1f5078; color: #fff; padding: 12px; position: sticky; top: 0; z-index: 10; font-size: 0.9rem; }
+    .plan-table td { border: 1px solid #ebeef5; padding: 8px; font-size: 0.85rem; }
+    .plan-table tbody tr:hover { background-color: #f9f9fa; }
+    .active-block { background-color: rgba(31, 80, 120, 0.8); color: #fff; font-weight: bold; border-radius: 4px; padding: 4px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
 </style>
 </head>
 <body>
@@ -209,7 +145,7 @@
         <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
         <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
-            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表</button>
+            <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表 (スケジュール)</button>
             <button class="tab-btn" id="tab-btn-master" onclick="switchTab('master')">⚙️ 品番リスト設定</button>
         </div>
     </div>
@@ -218,21 +154,15 @@
          タブ1: シミュレーター画面
     =========================================== -->
     <div id="view-sim" class="tab-content active">
-        <!-- 親品番選択（ドラッグ対応ボタン） & コントロール -->
         <div class="header-card">
-            <div class="parent-selector" id="parent-button-list">
-                <!-- JSで動的にボタンを生成 -->
-            </div>
+            <div class="parent-selector" id="parent-button-list"></div>
             <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <!-- 使用期間の設定 -->
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:0.9rem; font-weight:bold; color:var(--text-sub);">📅 使用期間:</span>
                     <input type="date" id="parent-start-date" onchange="updateParentDate('startDate', this.value)" style="width:auto; padding:5px 8px;">
                     <span style="color:var(--text-sub);">〜</span>
                     <input type="date" id="parent-end-date" onchange="updateParentDate('endDate', this.value)" style="width:auto; padding:5px 8px;">
                 </div>
-                
-                <!-- 操作ボタン -->
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-outline" onclick="editCurrentParentName()">✏️ 機種名を変更</button>
                     <button class="btn btn-outline" id="btn-compare" onclick="toggleCompareMode()">並べて比較</button>
@@ -243,7 +173,6 @@
 
         <!-- 個別表示モード -->
         <div id="single-view">
-            <!-- KPIカード -->
             <div class="kpi-grid">
                 <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
                 <div class="kpi-card"><div class="kpi-title">現在シミュレーション額</div><div class="kpi-value" id="kpi-current">¥0</div></div>
@@ -251,28 +180,28 @@
                 <div class="kpi-card"><div class="kpi-title">コスト削減率</div><div class="kpi-value" id="kpi-rate">0.0%</div></div>
             </div>
 
-            <!-- メインテーブル -->
             <div class="table-card">
                 <table>
                     <thead>
                         <tr>
                             <th style="width: 10%;">品名</th>
                             <th style="width: 15%;">ユニット名</th>
-                            <th style="width: 120px;">品番コード</th>
+                            <th style="width: 110px;">品番コード</th>
                             <th style="width: 12%;">品番名</th>
                             <th style="width: 80px;">使用区分</th>
-                            <th style="width: 65px;">使用数</th>
-                            <th style="width: 100px;">新品単価</th>
-                            <th style="width: 100px;">リユース単価</th>
-                            <th style="width: 100px;">適用単価</th>
+                            <th style="width: 60px;">員数</th> <!-- NEW -->
+                            <th style="width: 60px;">使用数</th>
+                            <th style="width: 95px;">新品単価</th>
+                            <th style="width: 95px;">リユース単価</th>
+                            <th style="width: 95px;">適用単価</th>
                             <th style="width: 100px;">小計</th>
-                            <th style="width: 85px;">操作</th>
+                            <th style="width: 80px;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="parts-tbody"></tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="6" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
+                            <td colspan="7" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
                             <td id="foot-all-new" style="text-align: center;">¥0</td>
                             <td style="text-align: center;">-</td>
                             <td style="text-align: center;">-</td>
@@ -293,23 +222,23 @@
     </div>
 
     <!-- ==========================================
-         タブ2: 計画表画面
+         タブ2: 計画表（縦型スケジュール）画面
     =========================================== -->
     <div id="view-plan" class="tab-content">
-        <h2 style="color:var(--primary-navy); margin-bottom: 20px; font-size:1.4rem;">📅 機種別使用計画表</h2>
-        <div class="table-card">
-            <table style="min-width: 800px;">
+        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 機種別 使用スケジュール（リユース品被り確認）</h2>
+        <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 16px;">
+            ※青いブロックが重なっている期間は、複数の機種が同時に稼働するためリユース部品が不足しやすくなります。
+        </p>
+        
+        <div class="plan-table-container">
+            <table class="plan-table">
                 <thead>
-                    <tr>
-                        <th style="width:25%;">機種名</th>
-                        <th style="width:20%;">開始日</th>
-                        <th style="width:20%;">終了日</th>
-                        <th style="width:15%;">期間</th>
-                        <th style="width:20%;">シミュレーション額</th>
+                    <tr id="plan-thead-tr">
+                        <!-- JSで動的にヘッダー(年月・各機種名・合計稼働数)を生成 -->
                     </tr>
                 </thead>
                 <tbody id="plan-tbody">
-                    <!-- JSで動的に計画を描画 -->
+                    <!-- JSで動的にスケジュールブロックを描画 -->
                 </tbody>
             </table>
         </div>
@@ -375,7 +304,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v12'); // Data version up
+const simRef = db.ref('simulationData_v13'); // バージョン更新（員数追加版）
 
 let appData = {
     masterParts: [
@@ -385,22 +314,16 @@ let appData = {
         { itemName: "BBB", code: "", partName: "BBB リユース" }
     ],
     masterUnits: [
-        { name: "AT裏樋" },
-        { name: "三連樋" },
-        { name: "1×4昇降" }
+        { name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }
     ],
     parents: [
         {
-            id: "p1",
-            name: "【M-001】全自動洗濯機 A-1000",
-            startDate: "2026-08-01",
-            endDate: "2029-08-01",
+            id: "p1", name: "【M-001】全自動洗濯機 A-1000", startDate: "2026-08-01", endDate: "2029-08-01",
             parts: [
                 {
-                    itemName: "AAA",
-                    locked: false,
+                    itemName: "AAA", locked: false,
                     units: [
-                        { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 }
+                        { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", insuu: 1, qty: 2, newPrice: 12000, reusePrice: 5000 }
                     ]
                 }
             ]
@@ -425,15 +348,13 @@ simRef.on('value', (snapshot) => {
         else renderTable();
         
         renderMasterData();
-        renderPlanView();
+        renderPlanScheduleView(); // 新しい縦型スケジュールの描画
     } else {
         saveDataToFirebase();
     }
 });
 
-function saveDataToFirebase() {
-    simRef.set(appData);
-}
+function saveDataToFirebase() { simRef.set(appData); }
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -492,7 +413,7 @@ function renderParentButtons() {
         const btn = document.createElement("button");
         btn.className = "parent-btn" + (p.id === appData.currentParentId && !isCompareMode ? " active" : "");
         btn.textContent = p.name;
-        btn.draggable = true; // ドラッグ有効化
+        btn.draggable = true;
 
         btn.onclick = () => {
             if(isCompareMode) toggleCompareMode();
@@ -500,38 +421,25 @@ function renderParentButtons() {
             saveDataToFirebase();
         };
 
-        // D&D イベント
         btn.ondragstart = (e) => {
             draggedParentIdx = idx;
             e.dataTransfer.effectAllowed = 'move';
             setTimeout(() => btn.style.opacity = '0.4', 0);
         };
-        btn.ondragover = (e) => {
-            e.preventDefault();
-            btn.classList.add('drag-over');
-        };
-        btn.ondragleave = () => {
-            btn.classList.remove('drag-over');
-        };
+        btn.ondragover = (e) => { e.preventDefault(); btn.classList.add('drag-over'); };
+        btn.ondragleave = () => { btn.classList.remove('drag-over'); };
         btn.ondrop = (e) => {
             e.preventDefault();
             btn.classList.remove('drag-over');
             if(draggedParentIdx === null || draggedParentIdx === idx) return;
-            
-            // 配列の要素を入れ替える
             const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0];
             appData.parents.splice(idx, 0, draggedItem);
             saveDataToFirebase();
         };
-        btn.ondragend = () => {
-            btn.style.opacity = '1';
-            draggedParentIdx = null;
-        };
-
+        btn.ondragend = () => { btn.style.opacity = '1'; draggedParentIdx = null; };
         container.appendChild(btn);
     });
 
-    // 選択中機種の日付を反映
     const curr = getCurrentParent();
     if(curr) {
         document.getElementById('parent-start-date').value = curr.startDate || "";
@@ -550,10 +458,7 @@ function editCurrentParentName() {
     const curr = getCurrentParent();
     if(!curr) return;
     const newName = prompt("機種名を変更:", curr.name);
-    if(newName && newName.trim()) {
-        curr.name = newName.trim();
-        saveDataToFirebase();
-    }
+    if(newName && newName.trim()) { curr.name = newName.trim(); saveDataToFirebase(); }
 }
 
 function getCurrentParent() {
@@ -570,6 +475,7 @@ function addParent() {
     if(isCompareMode) toggleCompareMode();
     saveDataToFirebase();
 }
+
 function deleteCurrentParent() {
     if (appData.parents.length <= 1) return alert("最低1つの機種データが必要です。");
     if (!confirm("現在選択している機種を削除しますか？")) return;
@@ -579,46 +485,87 @@ function deleteCurrentParent() {
 }
 
 // ==========================================
-// 計画表タブ ロジック
+// 📅 新・計画表タブ ロジック（縦型スケジュール）
 // ==========================================
-function renderPlanView() {
-    const tbody = document.getElementById("plan-tbody");
-    tbody.innerHTML = "";
-    if(!appData.parents) return;
+function renderPlanScheduleView() {
+    const theadContainer = document.getElementById("plan-thead-tr");
+    const tbodyContainer = document.getElementById("plan-tbody");
     
+    if(!appData.parents || appData.parents.length === 0) {
+        tbodyContainer.innerHTML = `<tr><td class="text-center" colspan="100%">機種データがありません</td></tr>`;
+        return;
+    }
+
+    // 1. 全機種の最小・最大日付を特定してタイムラインの長さを決定
+    let minDate = new Date("2999-12-31");
+    let maxDate = new Date("1970-01-01");
+    let hasValidDates = false;
+
     appData.parents.forEach(p => {
-        let totalCurrent = 0;
-        if(p.parts) {
-            p.parts.forEach(part => {
-                part.units.forEach(unit => {
-                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-                    totalCurrent += (appliedPrice || 0) * (unit.qty || 0);
-                });
-            });
-        }
-
-        // 月数計算
-        let durationText = "-";
-        if(p.startDate && p.endDate) {
-            const d1 = new Date(p.startDate);
-            const d2 = new Date(p.endDate);
-            if(!isNaN(d1) && !isNaN(d2)) {
-                let months = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-                if(d2.getDate() < d1.getDate()) months--; // 日付を加味
-                durationText = months >= 0 ? `${months} ヶ月` : "設定エラー";
-            }
-        }
-
-        tbody.innerHTML += `
-            <tr>
-                <td style="font-weight:bold;">${p.name}</td>
-                <td>${p.startDate || '<span style="color:#999;">未設定</span>'}</td>
-                <td>${p.endDate || '<span style="color:#999;">未設定</span>'}</td>
-                <td>${durationText}</td>
-                <td class="text-right" style="font-weight:bold; color:var(--primary-navy);">${fmtYen(totalCurrent)}</td>
-            </tr>
-        `;
+        if(p.startDate) { let d = new Date(p.startDate); if(d < minDate) minDate = d; hasValidDates = true; }
+        if(p.endDate) { let d = new Date(p.endDate); if(d > maxDate) maxDate = d; hasValidDates = true; }
     });
+
+    if(!hasValidDates) {
+        minDate = new Date();
+        maxDate = new Date(); maxDate.setFullYear(maxDate.getFullYear() + 1);
+    }
+
+    // 月初・月末に正規化
+    minDate.setDate(1);
+    maxDate.setDate(28);
+
+    // 2. 月配列の生成
+    let months = [];
+    let curr = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+    
+    while(curr <= end) {
+        months.push({ year: curr.getFullYear(), month: curr.getMonth() + 1 });
+        curr.setMonth(curr.getMonth() + 1);
+    }
+
+    // 3. テーブルヘッダー生成 (年月 + 機種ごとの列 + 合計稼働数)
+    let thHtml = `<th style="width:100px; left:0; z-index:20;">年月</th>`;
+    appData.parents.forEach(p => { thHtml += `<th>${p.name}</th>`; });
+    thHtml += `<th style="width:120px; background:#e6a23c;">同時稼働数<br><span style="font-size:0.75rem; font-weight:normal;">(被りチェック)</span></th>`;
+    theadContainer.innerHTML = thHtml;
+
+    // 4. テーブルボディ(スケジュール)生成
+    let tbodyHtml = "";
+    months.forEach(m => {
+        const monthDateStr = `${m.year}年 ${m.month}月`;
+        let rowHtml = `<tr><td style="font-weight:bold; background:#f5f7fa; position:sticky; left:0;">${monthDateStr}</td>`;
+        
+        let activeCount = 0;
+        
+        appData.parents.forEach(p => {
+            let isActive = false;
+            if(p.startDate && p.endDate) {
+                const s = new Date(p.startDate); s.setDate(1);
+                const e = new Date(p.endDate); e.setDate(28);
+                const mDate = new Date(m.year, m.month - 1, 15); // 月の真ん中で判定
+                
+                if(mDate >= s && mDate <= e) isActive = true;
+            }
+            
+            if(isActive) {
+                activeCount++;
+                rowHtml += `<td><div class="active-block">稼働</div></td>`;
+            } else {
+                rowHtml += `<td></td>`;
+            }
+        });
+        
+        // 合計稼働数セル (2台以上被りがある場合は赤字にして警告)
+        const countColor = activeCount > 1 ? "#f56c6c" : "var(--text-main)";
+        const countWeight = activeCount > 1 ? "bold" : "normal";
+        rowHtml += `<td style="color:${countColor}; font-weight:${countWeight};">${activeCount > 0 ? activeCount + ' 台' : '-'}</td></tr>`;
+        
+        tbodyHtml += rowHtml;
+    });
+    
+    tbodyContainer.innerHTML = tbodyHtml;
 }
 
 // ==========================================
@@ -659,9 +606,12 @@ function renderCompareView() {
             parent.parts.forEach(part => {
                 const rowSpan = part.units.length;
                 part.units.forEach((unit, uIdx) => {
-                    const costNew = (unit.newPrice || 0) * (unit.qty || 0);
+                    // ★ 員数×使用数 で合計数量を算出
+                    const totalQty = (unit.insuu || 1) * (unit.qty || 0);
+                    const costNew = (unit.newPrice || 0) * totalQty;
                     const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-                    const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
+                    const costCurrent = (appliedPrice || 0) * totalQty;
+                    
                     totalAllNew += costNew; totalCurrent += costCurrent;
                     
                     const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
@@ -673,6 +623,7 @@ function renderCompareView() {
                             <td>${unit.code || ''}</td>
                             <td>${unit.partName || ''}</td>
                             <td>${choiceText}</td>
+                            <td class="text-center">${fmtNum(unit.insuu || 1)}</td>
                             <td class="text-center">${fmtNum(unit.qty)}</td>
                             <td class="text-right" style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
                             <td class="text-right" style="font-weight:bold;">${fmtYen(costCurrent)}</td>
@@ -681,7 +632,7 @@ function renderCompareView() {
                 });
             });
         } else {
-            tbodyHtml = `<tr><td colspan="8" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
+            tbodyHtml = `<tr><td colspan="9" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
         }
 
         const savings = totalAllNew - totalCurrent;
@@ -710,7 +661,7 @@ function renderCompareView() {
                 </div>
                 <table class="table-card" style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
-                        <tr><th style="width:12%;">品名</th><th style="width:20%;">ユニット名</th><th style="width:12%;">品番コード</th><th style="width:15%;">品番名</th><th style="width:10%;">区分</th><th style="width:8%;">数</th><th style="width:11%;">適用単価</th><th style="width:12%;">小計</th></tr>
+                        <tr><th style="width:12%;">品名</th><th style="width:18%;">ユニット名</th><th style="width:11%;">品番コード</th><th style="width:14%;">品番名</th><th style="width:9%;">区分</th><th style="width:7%;">員数</th><th style="width:7%;">使用数</th><th style="width:11%;">単価</th><th style="width:11%;">小計</th></tr>
                     </thead>
                     <tbody>${tbodyHtml}</tbody>
                 </table>
@@ -730,7 +681,7 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
         calculateTotals();
         return;
     }
@@ -775,8 +726,10 @@ function renderTable() {
             if (unit.name && !appData.masterUnits.find(u => u.name === unit.name)) thisUnitNameOpts += `<option value="${unit.name}" selected>${unit.name}</option>`;
             else thisUnitNameOpts = thisUnitNameOpts.replace(`value="${unit.name}"`, `value="${unit.name}" selected`);
 
+            // ★ 員数×使用数 の計算
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-            const subTotal = (appliedPrice || 0) * (unit.qty || 0);
+            const totalQty = (unit.insuu || 1) * (unit.qty || 0);
+            const subTotal = (appliedPrice || 0) * totalQty;
 
             tr.innerHTML += `
                 <td>
@@ -795,6 +748,7 @@ function renderTable() {
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.insuu || 1)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.insuu || 1}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'insuu', this.value)"></td>
                 <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.qty}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
                 <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.newPrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
                 <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onfocus="this.value='${unit.reusePrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
@@ -834,7 +788,12 @@ function addPartGroup() {
     if (!parent.parts) parent.parts = [];
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
-    parent.parts.push({ itemName: defaultItem, locked: false, units: [{ name: defaultUnit, code: "", partName: "", choice: "new", qty: 1, newPrice: 0, reusePrice: 0 }] });
+    
+    parent.parts.push({
+        itemName: defaultItem,
+        locked: false,
+        units: [{ name: defaultUnit, code: "", partName: "", choice: "new", insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
+    });
     saveDataToFirebase();
 }
 
@@ -842,7 +801,22 @@ function addUnitRow(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
-    parent.parts[pIdx].units.push({ name: defaultUnit, code: "", partName: "", choice: "reuse", qty: 1, newPrice: 0, reusePrice: 0 });
+    
+    // ★ 最初の行に登録されている単価を取得してコピーする
+    const firstUnit = parent.parts[pIdx].units[0];
+    const defaultNewPrice = firstUnit ? firstUnit.newPrice : 0;
+    const defaultReusePrice = firstUnit ? firstUnit.reusePrice : 0;
+
+    parent.parts[pIdx].units.push({
+        name: defaultUnit,
+        code: "",
+        partName: "",
+        choice: "reuse",
+        insuu: 1,
+        qty: 1,
+        newPrice: defaultNewPrice,    // コピー反映
+        reusePrice: defaultReusePrice // コピー反映
+    });
     saveDataToFirebase();
 }
 
@@ -910,9 +884,12 @@ function calculateTotals() {
 
     parent.parts.forEach(part => {
         part.units.forEach(unit => {
-            const costNew = (unit.newPrice || 0) * (unit.qty || 0);
+            // ★ 員数×使用数 の計算をKPIにも適用
+            const totalQty = (unit.insuu || 1) * (unit.qty || 0);
+            const costNew = (unit.newPrice || 0) * totalQty;
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
-            const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
+            const costCurrent = (appliedPrice || 0) * totalQty;
+            
             totalAllNew += costNew; totalCurrent += costCurrent;
         });
     });
