@@ -88,14 +88,36 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        gap: 16px;
     }
 
+    /* ボタン風の親品番リスト */
     .parent-selector {
         display: flex;
         align-items: center;
         gap: 12px;
+        flex-wrap: wrap;
+        flex: 1;
+    }
+
+    .parent-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        background-color: #fff;
+        color: var(--text-sub);
+        cursor: pointer;
+        font-size: 0.9rem;
         font-weight: bold;
-        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    .parent-btn.active {
+        background-color: var(--primary-navy);
+        color: #fff;
+        border-color: var(--primary-navy);
+    }
+    .parent-btn:hover:not(.active) {
+        background-color: #f5f7fa;
     }
 
     select, input[type="text"] {
@@ -122,11 +144,19 @@
         font-size: 0.9rem;
         cursor: pointer;
         border: none;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
+        white-space: nowrap;
     }
 
     .btn-navy { background-color: var(--primary-navy); color: white; }
     .btn-navy:hover { background-color: var(--navy-hover); }
+
+    .btn-outline {
+        background-color: transparent;
+        color: var(--primary-navy);
+        border: 1px solid var(--primary-navy);
+    }
+    .btn-outline:hover { background-color: #eff6ff; }
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
@@ -189,6 +219,26 @@
     .master-panel h3 { margin-top: 0; color: var(--primary-navy); font-size: 1.2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
     .master-table th { background-color: #e4e7ed; color: var(--text-main); }
     .master-table { min-width: auto; }
+
+    /* 並べて比較ビュー */
+    .compare-view {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+    }
+    .compare-col {
+        min-width: 700px;
+        flex: 1;
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+    .compare-col h3 {
+        margin-top: 0; color: var(--primary-navy); border-bottom: 2px solid var(--primary-navy); padding-bottom: 10px; margin-bottom: 20px;
+    }
+    .compare-table { min-width: auto; font-size: 0.8rem; }
 </style>
 </head>
 <body>
@@ -207,56 +257,67 @@
          タブ1: シミュレーター画面
     =========================================== -->
     <div id="view-sim" class="tab-content active">
-        <!-- 親品番選択 -->
+        <!-- 親品番選択（ボタン化） & 比較ボタン -->
         <div class="header-card">
-            <div class="parent-selector">
-                <span>■ 親品番（機種）：</span>
-                <select id="parent-select" onchange="switchParent()" style="min-width: 300px; width:auto;"></select>
+            <div class="parent-selector" id="parent-button-list">
+                <!-- JSで動的にボタンを生成 -->
             </div>
-            <button class="btn btn-navy" onclick="addParent()">＋ 新しい親品番を登録</button>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-outline" id="btn-compare" onclick="toggleCompareMode()">並べて比較</button>
+                <button class="btn btn-navy" onclick="addParent()">＋ 機種登録</button>
+            </div>
         </div>
 
-        <!-- KPIカード -->
-        <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
-            <div class="kpi-card"><div class="kpi-title">現在シミュレーション額</div><div class="kpi-value" id="kpi-current">¥0</div></div>
-            <div class="kpi-card"><div class="kpi-title">リユース活用 削減金額</div><div class="kpi-value" id="kpi-savings">¥0</div></div>
-            <div class="kpi-card"><div class="kpi-title">コスト削減率</div><div class="kpi-value" id="kpi-rate">0.0%</div></div>
+        <!-- 個別表示モード（通常時） -->
+        <div id="single-view">
+            <!-- KPIカード -->
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
+                <div class="kpi-card"><div class="kpi-title">現在シミュレーション額</div><div class="kpi-value" id="kpi-current">¥0</div></div>
+                <div class="kpi-card"><div class="kpi-title">リユース活用 削減金額</div><div class="kpi-value" id="kpi-savings">¥0</div></div>
+                <div class="kpi-card"><div class="kpi-title">コスト削減率</div><div class="kpi-value" id="kpi-rate">0.0%</div></div>
+            </div>
+
+            <!-- メインテーブル -->
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">品名</th>
+                            <th style="width: 15%;">ユニット名</th>
+                            <th style="width: 120px;">品番コード</th>
+                            <th style="width: 12%;">品番名</th>
+                            <th style="width: 80px;">使用区分</th>
+                            <th style="width: 65px;">使用数</th>
+                            <th style="width: 100px;">新品単価</th>
+                            <th style="width: 100px;">リユース単価</th>
+                            <th style="width: 100px;">適用単価</th>
+                            <th style="width: 100px;">小計</th>
+                            <th style="width: 85px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parts-tbody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
+                            <td id="foot-all-new" style="text-align: center;">¥0</td>
+                            <td style="text-align: center;">-</td>
+                            <td style="text-align: center;">-</td>
+                            <td id="foot-current" style="text-align: center;">¥0</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button class="btn btn-navy" onclick="addPartGroup()">＋ 新規パーツを追加</button>
+                <button class="btn btn-outline" style="margin-left: 8px;" onclick="deleteCurrentParent()">現在の機種を削除</button>
+            </div>
         </div>
 
-        <!-- メインテーブル -->
-        <div class="table-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 10%;">品名</th>
-                        <th style="width: 15%;">ユニット名</th>
-                        <th style="width: 120px;">品番コード</th>
-                        <th style="width: 12%;">品番名</th>
-                        <th style="width: 80px;">使用区分</th>
-                        <th style="width: 65px;">使用数</th>
-                        <th style="width: 100px;">新品単価</th>
-                        <th style="width: 100px;">リユース単価</th>
-                        <th style="width: 100px;">適用単価</th>
-                        <th style="width: 100px;">小計</th>
-                        <th style="width: 85px;">操作</th>
-                    </tr>
-                </thead>
-                <tbody id="parts-tbody"></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
-                        <td id="foot-all-new" style="text-align: center;">¥0</td>
-                        <td style="text-align: center;">-</td>
-                        <td style="text-align: center;">-</td>
-                        <td id="foot-current" style="text-align: center;">¥0</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <div style="margin-top: 15px; text-align: right;">
-            <button class="btn btn-navy" onclick="addPartGroup()">＋ 新規パーツを追加</button>
+        <!-- 比較モード（横並び） -->
+        <div id="compare-view" class="compare-view" style="display: none;">
+            <!-- JSで各機種のカードを横並びに生成 -->
         </div>
     </div>
 
@@ -320,11 +381,9 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-// バージョン更新: マスターデータ構造を含むv10
-const simRef = db.ref('simulationData_v10');
+const simRef = db.ref('simulationData_v11');
 
 let appData = {
     masterParts: [
@@ -350,7 +409,13 @@ let appData = {
                         { name: "AT裏樋", code: "1234567", partName: "AAA 新品", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
                         { name: "三連樋", code: "1234568", partName: "AAA リユース", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
                     ]
-                },
+                }
+            ]
+        },
+        {
+            id: "p2",
+            name: "【M-002】全自動洗濯機 B-2000",
+            parts: [
                 {
                     itemName: "BBB",
                     locked: false,
@@ -364,16 +429,23 @@ let appData = {
     currentParentId: "p1"
 };
 
+let isCompareMode = false;
+
 // リアルタイム同期
 simRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // マスターデータが空の場合の安全策
         if(!data.masterParts) data.masterParts = [];
         if(!data.masterUnits) data.masterUnits = [];
         appData = data;
-        renderParentSelect();
-        renderTable();
+        
+        renderParentButtons();
+        
+        if (isCompareMode) {
+            renderCompareView();
+        } else {
+            renderTable();
+        }
         renderMasterData();
     } else {
         saveDataToFirebase();
@@ -384,9 +456,6 @@ function saveDataToFirebase() {
     simRef.set(appData);
 }
 
-// ----------------------------------------------------
-// タブ切り替えロジック
-// ----------------------------------------------------
 function switchTab(tabId) {
     document.getElementById('view-sim').classList.remove('active');
     document.getElementById('view-master').classList.remove('active');
@@ -397,11 +466,13 @@ function switchTab(tabId) {
     document.getElementById('tab-btn-' + tabId).classList.add('active');
 }
 
-// ----------------------------------------------------
-// マスターデータ管理ロジック
-// ----------------------------------------------------
+function fmtNum(v) { return (v || 0).toLocaleString(); }
+function fmtYen(v) { return "¥" + fmtNum(v); }
+
+// ==========================================
+// マスターデータロジック
+// ==========================================
 function renderMasterData() {
-    // 部品マスターの描画
     const partsBody = document.getElementById("master-parts-tbody");
     partsBody.innerHTML = "";
     appData.masterParts.forEach((m, idx) => {
@@ -415,7 +486,6 @@ function renderMasterData() {
         `;
     });
 
-    // ユニットマスターの描画
     const unitsBody = document.getElementById("master-units-tbody");
     unitsBody.innerHTML = "";
     appData.masterUnits.forEach((u, idx) => {
@@ -441,7 +511,6 @@ function deleteMasterPart(idx) {
     appData.masterParts.splice(idx, 1);
     saveDataToFirebase();
 }
-
 function addMasterUnit() {
     appData.masterUnits.push({ name: "新規ユニット" });
     saveDataToFirebase();
@@ -456,30 +525,33 @@ function deleteMasterUnit(idx) {
     saveDataToFirebase();
 }
 
-// ----------------------------------------------------
-// シミュレーターロジック
-// ----------------------------------------------------
+// ==========================================
+// シミュレーター（個別表示 / 比較モード）
+// ==========================================
 function getCurrentParent() {
     if (!appData.parents) return null;
     return appData.parents.find(p => p.id === appData.currentParentId) || appData.parents[0];
 }
 
-function renderParentSelect() {
-    const select = document.getElementById("parent-select");
-    select.innerHTML = "";
+// ボタン風の親品番リスト生成
+function renderParentButtons() {
+    const container = document.getElementById("parent-button-list");
+    container.innerHTML = `<span style="color:var(--text-sub); font-size:0.9rem; margin-right:4px;">■ 機種：</span>`;
+    
     if (!appData.parents) return;
     appData.parents.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p.id;
-        option.textContent = p.name;
-        if(p.id === appData.currentParentId) option.selected = true;
-        select.appendChild(option);
+        const btn = document.createElement("button");
+        // 比較モード中はアクティブハイライトを消す
+        btn.className = "parent-btn" + (p.id === appData.currentParentId && !isCompareMode ? " active" : "");
+        btn.textContent = p.name;
+        btn.onclick = () => {
+            // 機種ボタンを押したら強制的に個別モードに戻す
+            if(isCompareMode) toggleCompareMode();
+            appData.currentParentId = p.id;
+            saveDataToFirebase(); // 再描画
+        };
+        container.appendChild(btn);
     });
-}
-
-function switchParent() {
-    appData.currentParentId = document.getElementById("parent-select").value;
-    saveDataToFirebase();
 }
 
 function addParent() {
@@ -489,17 +561,136 @@ function addParent() {
     const newId = "p_" + Date.now();
     appData.parents.push({ id: newId, name: newName.trim(), parts: [] });
     appData.currentParentId = newId;
+    if(isCompareMode) toggleCompareMode();
     saveDataToFirebase();
 }
 
-function fmtNum(v) { return (v || 0).toLocaleString(); }
-function fmtYen(v) { return "¥" + fmtNum(v); }
+function deleteCurrentParent() {
+    if (appData.parents.length <= 1) return alert("最低1つの機種データが必要です。");
+    if (!confirm("現在選択している機種を削除しますか？")) return;
 
-// マスターデータから一意の品名リストを取得
+    appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
+    appData.currentParentId = appData.parents[0].id;
+    saveDataToFirebase();
+}
+
+// 並べて比較モードのトグル
+function toggleCompareMode() {
+    isCompareMode = !isCompareMode;
+    const btn = document.getElementById('btn-compare');
+    
+    if (isCompareMode) {
+        btn.textContent = "個別表示に戻す";
+        btn.style.backgroundColor = "var(--primary-navy)";
+        btn.style.color = "#fff";
+        document.getElementById('single-view').style.display = 'none';
+        document.getElementById('compare-view').style.display = 'flex';
+        renderCompareView();
+    } else {
+        btn.textContent = "並べて比較";
+        btn.style.backgroundColor = "transparent";
+        btn.style.color = "var(--primary-navy)";
+        document.getElementById('single-view').style.display = 'block';
+        document.getElementById('compare-view').style.display = 'none';
+        renderTable();
+    }
+    renderParentButtons();
+}
+
+// 比較ビューの描画（全機種を横に並べる）
+function renderCompareView() {
+    const container = document.getElementById("compare-view");
+    container.innerHTML = "";
+    
+    if(!appData.parents) return;
+    
+    appData.parents.forEach(parent => {
+        let totalAllNew = 0;
+        let totalCurrent = 0;
+        
+        let tbodyHtml = "";
+        
+        if (parent.parts && parent.parts.length > 0) {
+            parent.parts.forEach(part => {
+                const rowSpan = part.units.length;
+                part.units.forEach((unit, uIdx) => {
+                    const costNew = (unit.newPrice || 0) * (unit.qty || 0);
+                    const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
+                    const costCurrent = (appliedPrice || 0) * (unit.qty || 0);
+                    
+                    totalAllNew += costNew;
+                    totalCurrent += costCurrent;
+                    
+                    const choiceText = unit.choice === 'new' ? '<span style="color:#f56c6c;">新品</span>' : '<span style="color:#67c23a;">リユース</span>';
+                    
+                    tbodyHtml += `
+                        <tr>
+                            ${uIdx === 0 ? `<td rowspan="${rowSpan}">${part.itemName || ''}</td>` : ''}
+                            <td>${unit.name || ''}</td>
+                            <td>${unit.code || ''}</td>
+                            <td>${unit.partName || ''}</td>
+                            <td>${choiceText}</td>
+                            <td class="text-center">${fmtNum(unit.qty)}</td>
+                            <td class="text-right" style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
+                            <td class="text-right" style="font-weight:bold;">${fmtYen(costCurrent)}</td>
+                        </tr>
+                    `;
+                });
+            });
+        } else {
+            tbodyHtml = `<tr><td colspan="8" class="text-center" style="padding:20px; color:#999;">部品データがありません</td></tr>`;
+        }
+
+        const savings = totalAllNew - totalCurrent;
+        const rate = totalAllNew > 0 ? ((savings / totalAllNew) * 100).toFixed(1) : "0.0";
+
+        const colHtml = `
+            <div class="compare-col">
+                <h3>${parent.name}</h3>
+                <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px;">
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">基準額</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalAllNew)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">シミュレーション額</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${fmtYen(totalCurrent)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">削減金額</div>
+                        <div class="kpi-value" style="font-size:1.2rem; color:#67c23a;">${fmtYen(savings)}</div>
+                    </div>
+                    <div class="kpi-card" style="padding:12px;">
+                        <div class="kpi-title">コスト削減率</div>
+                        <div class="kpi-value" style="font-size:1.2rem;">${rate}%</div>
+                    </div>
+                </div>
+                <table class="table-card compare-table" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="width:12%;">品名</th>
+                            <th style="width:20%;">ユニット名</th>
+                            <th style="width:12%;">品番コード</th>
+                            <th style="width:15%;">品番名</th>
+                            <th style="width:10%;">区分</th>
+                            <th style="width:8%;">数</th>
+                            <th style="width:11%;">適用単価</th>
+                            <th style="width:12%;">小計</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                </table>
+            </div>
+        `;
+        container.innerHTML += colHtml;
+    });
+}
+
 function getUniqueItemNames() {
     return [...new Set(appData.masterParts.map(p => p.itemName).filter(Boolean))];
 }
 
+// メインテーブル（個別表示）の描画
 function renderTable() {
     const parent = getCurrentParent();
     const tbody = document.getElementById("parts-tbody");
@@ -517,20 +708,16 @@ function renderTable() {
         const rowSpan = part.units.length;
         const isLocked = !!part.locked;
         
-        // 品名（itemName）のプルダウンオプション生成
         let itemNameOptions = `<option value="">--選択--</option>`;
         uniqueItems.forEach(iName => {
             itemNameOptions += `<option value="${iName}" ${part.itemName === iName ? 'selected' : ''}>${iName}</option>`;
         });
-        // 過去のデータ等でマスターにない品名が設定されている場合の補完
         if (part.itemName && !uniqueItems.includes(part.itemName)) {
             itemNameOptions += `<option value="${part.itemName}" selected>${part.itemName}</option>`;
         }
 
-        // 選択された品名に紐づくマスター部品リスト
         const linkedMasterParts = appData.masterParts.filter(m => m.itemName === part.itemName);
 
-        // ユニット名マスターのオプション生成
         let unitNameOptions = `<option value="">--選択--</option>`;
         appData.masterUnits.forEach(u => {
             unitNameOptions += `<option value="${u.name}">${u.name}</option>`;
@@ -540,7 +727,6 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
-            // 1行目のときのみ「品名」を表示（縦結合） - プルダウン化
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
@@ -551,18 +737,15 @@ function renderTable() {
                 `;
             }
 
-            // 品番コードと品番名のプルダウンオプション（紐づくマスターデータから生成）
             let codeOptions = `<option value="">--</option>`;
             let partNameOptions = `<option value="">--</option>`;
             linkedMasterParts.forEach(m => {
                 codeOptions += `<option value="${m.code}" ${unit.code === m.code ? 'selected' : ''}>${m.code || '(空白)'}</option>`;
                 partNameOptions += `<option value="${m.partName}" ${unit.partName === m.partName ? 'selected' : ''}>${m.partName || '(空白)'}</option>`;
             });
-            // 未登録の既存データを維持するための補完
             if (unit.code && !linkedMasterParts.find(m => m.code === unit.code)) codeOptions += `<option value="${unit.code}" selected>${unit.code}</option>`;
             if (unit.partName && !linkedMasterParts.find(m => m.partName === unit.partName)) partNameOptions += `<option value="${unit.partName}" selected>${unit.partName}</option>`;
 
-            // ユニット名の補完
             let thisUnitNameOpts = unitNameOptions;
             if (unit.name && !appData.masterUnits.find(u => u.name === unit.name)) {
                 thisUnitNameOpts += `<option value="${unit.name}" selected>${unit.name}</option>`;
@@ -574,7 +757,6 @@ function renderTable() {
             const subTotal = (appliedPrice || 0) * (unit.qty || 0);
 
             tr.innerHTML += `
-                <!-- ユニット名 (+ボタン & ✕ボタン) -->
                 <td>
                     <div class="unit-cell-flex">
                         <select style="flex:1;" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
@@ -584,19 +766,16 @@ function renderTable() {
                         ${!isLocked ? `<button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕</button>` : ''}
                     </div>
                 </td>
-                <!-- 品番コード -->
                 <td>
                     <select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">
                         ${codeOptions}
                     </select>
                 </td>
-                <!-- 品番名 -->
                 <td>
                     <select class="text-center" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">
                         ${partNameOptions}
                     </select>
                 </td>
-                <!-- 使用区分 -->
                 <td>
                     <select style="text-align:center; font-weight:bold; ${unit.choice==='new' ? 'color:#f56c6c; background:#fef0f0;' : 'color:#67c23a; background:#f0f9eb;'}" 
                             ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
@@ -604,31 +783,25 @@ function renderTable() {
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <!-- 使用数 -->
                 <td>
                     <input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.qty}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
                 </td>
-                <!-- 新品単価 -->
                 <td>
                     <input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.newPrice}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)">
                 </td>
-                <!-- リユース単価 -->
                 <td>
                     <input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.reusePrice}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)">
                 </td>
-                <!-- 適用単価 -->
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(appliedPrice)}</td>
-                <!-- 小計 -->
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
 
-            // 操作カラム
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
@@ -661,7 +834,6 @@ function addPartGroup() {
     if (!parent) return;
     if (!parent.parts) parent.parts = [];
 
-    // 初期値としてマスターの最初の品名をセット
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
 
@@ -701,7 +873,6 @@ function updatePartGroup(pIdx, key, val) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
     parent.parts[pIdx][key] = val;
-    // 品名が変わったら配下のユニットのコード・名前をクリアする
     if(key === 'itemName') {
         parent.parts[pIdx].units.forEach(u => {
             u.code = "";
@@ -711,7 +882,6 @@ function updatePartGroup(pIdx, key, val) {
     saveDataToFirebase();
 }
 
-// 連動するコード/品番名のアップデート処理
 function updateLinkedPart(pIdx, uIdx, key, val) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
@@ -719,7 +889,6 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
     const itemName = parent.parts[pIdx].itemName;
 
     unit[key] = val;
-    // マスターを検索して片方を自動連動させる
     if(key === 'code') {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.code === val);
         if(match) unit.partName = match.partName;
