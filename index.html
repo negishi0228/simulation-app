@@ -119,7 +119,7 @@
 
     /* テーブルデザイン (共通) */
     .table-card { background: var(--card-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1280px; } /* 幅を1280pxに拡張 */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 1280px; }
     thead th { background-color: var(--primary-navy); color: white; padding: 10px 4px; font-weight: 600; text-align: center; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); }
     tbody td { padding: 10px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     tfoot tr td { background-color: #eaedf2; font-weight: bold; padding: 12px 6px; border-top: 2px solid #dcdfe6; border: 1px solid #dcdfe6; }
@@ -200,7 +200,6 @@
                 <table style="min-width: 1280px;">
                     <thead>
                         <tr>
-                            <!-- 各カラムの比率を調整し、ユニット名を縮小、数量と単価を拡張 -->
                             <th style="width: 13%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/削除)</span></th>
                             <th style="width: 14%;">ユニット名</th>
                             <th style="width: 110px;">品番コード</th>
@@ -296,7 +295,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// ★ 提供いただいた Firebase 設定情報 ★
+// ★ Firebase 設定情報 ★
 const firebaseConfig = {
   apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
   authDomain: "resim-3c978.firebaseapp.com",
@@ -309,8 +308,9 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-// データ保持のための参照先固定（v17）
-const simRef = db.ref('simulationData_v17');
+
+// ★ データがリセットされないよう保存先名を固定化しました ★
+const simRef = db.ref('simulationData_main');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
 let isCompareMode = false;
@@ -356,7 +356,6 @@ simRef.on('value', (snapshot) => {
         if(!data.masterParts) data.masterParts = [];
         if(!data.masterUnits) data.masterUnits = [];
         
-        // 自分が保存した時、または自動同期ONの時だけ描画
         if (isAutoSync || isLocalUpdate) {
             appData = data;
             isLocalUpdate = false;
@@ -364,12 +363,10 @@ simRef.on('value', (snapshot) => {
             document.getElementById('update-notification').style.display = 'none';
             renderAllViews();
         } else {
-            // 自動同期OFF中に他人が更新した場合
             pendingData = data;
             document.getElementById('update-notification').style.display = 'block';
         }
     } else {
-        // DBが完全に空の場合のみ初期データをセット
         appData = getInitialSampleData();
         saveDataToFirebase();
     }
@@ -696,7 +693,7 @@ function renderMatrixCompareView() {
                 if (mData) {
                     totals[p.id] += mData.subtotal;
                     html += `
-                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5;">${fmtNum(mData.totalQty)} <span style="font-size:0.7rem;color:#999;">(${mData.insuu}×${mData.qty})</span></td>
+                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5;">${fmtNum(mData.totalQty)} <span style="font-size:0.7rem;color:#999;">(${mData.insuu}×${fmtNum(mData.qty)})</span></td>
                         <td class="text-right matrix-model-col" style="font-weight:bold;">${fmtYen(mData.subtotal)}</td>
                     `;
                 } else {
