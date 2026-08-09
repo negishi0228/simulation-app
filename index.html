@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>親品番・部品採用シミュレーター</title>
+<title>機種別リユースシミュレーター</title>
 <style>
     :root {
         --primary-navy: #1f5078;
@@ -13,10 +13,6 @@
         --border-color: #dcdfe6;
         --text-main: #303133;
         --text-sub: #606266;
-        --badge-new-bg: #fde2e2;
-        --badge-new-text: #f56c6c;
-        --badge-reuse-bg: #e1f3d8;
-        --badge-reuse-text: #67c23a;
     }
 
     * { box-sizing: border-box; }
@@ -30,8 +26,19 @@
     }
 
     .container {
-        max-width: 1280px;
+        max-width: 1380px;
         margin: 0 auto;
+    }
+
+    /* 最上段タイトル */
+    .app-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--primary-navy);
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     /* 上部ヘッダーコントロール */
@@ -55,10 +62,10 @@
     }
 
     select, input[type="text"] {
-        padding: 8px 10px;
+        padding: 7px 8px;
         border: 1px solid var(--border-color);
         border-radius: 4px;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         outline: none;
     }
 
@@ -96,6 +103,7 @@
         cursor: pointer;
         border: 1px solid var(--border-color);
         white-space: nowrap;
+        flex-shrink: 0;
         transition: background-color 0.2s;
     }
     .btn-unit-add:hover { background-color: #dcdfe6; color: var(--primary-navy); }
@@ -106,9 +114,9 @@
         color: white;
         border: none;
         border-radius: 3px;
-        padding: 4px 10px;
+        padding: 4px 8px;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: bold;
     }
     .btn-lock:hover { background-color: #5daf34; }
@@ -118,21 +126,38 @@
         color: white;
         border: none;
         border-radius: 3px;
-        padding: 4px 10px;
+        padding: 4px 8px;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: bold;
     }
     .btn-unlock:hover { background-color: #cf9236; }
 
-    .btn-del {
+    /* 各行ユニット削除ボタン */
+    .btn-unit-del {
+        background-color: #fef0f0;
+        color: #f56c6c;
+        border: 1px solid #fde2e2;
+        border-radius: 3px;
+        padding: 2px 6px;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    .btn-unit-del:hover {
+        background-color: #f56c6c;
+        color: white;
+    }
+
+    /* グループ全体削除ボタン */
+    .btn-group-del {
         background-color: #f56c6c;
         color: white;
         border: none;
         border-radius: 3px;
         padding: 4px 8px;
         cursor: pointer;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     /* KPIカード */
@@ -174,21 +199,21 @@
     table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         table-layout: fixed;
     }
 
     thead th {
         background-color: var(--primary-navy);
         color: white;
-        padding: 12px 6px;
+        padding: 12px 4px;
         font-weight: 600;
         text-align: center;
-        font-size: 0.88rem;
+        font-size: 0.85rem;
     }
 
     tbody td {
-        padding: 10px 6px;
+        padding: 8px 4px;
         border-bottom: 1px solid #ebeef5;
         vertical-align: middle;
         text-align: center;
@@ -198,10 +223,11 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        padding: 0 2px;
     }
 
     .select-use-type {
-        padding: 5px 6px;
+        padding: 5px 4px;
         border-radius: 4px;
         font-weight: bold;
         border: 1px solid var(--border-color);
@@ -238,6 +264,9 @@
 <body>
 
 <div class="container">
+    <!-- 最上段タイトル -->
+    <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
+
     <!-- 1. 親品番（機種）選択 -->
     <div class="header-card">
         <div class="parent-selector">
@@ -267,21 +296,22 @@
         </div>
     </div>
 
-    <!-- 3. 部品テーブル (バランス配置) -->
+    <!-- 3. 部品テーブル -->
     <div class="table-card">
         <table>
             <thead>
                 <tr>
-                    <th style="width: 110px;">品番コード</th> <!-- 7桁固定表示に最適 -->
-                    <th style="width: 14%;">品番名</th>
-                    <th style="width: 16%;">ユニット名</th>
-                    <th style="width: 95px;">使用区分</th>
-                    <th style="width: 75px;">使用数</th>
-                    <th style="width: 115px;">新品単価</th>
-                    <th style="width: 115px;">リユース単価</th>
-                    <th style="width: 110px;">適用単価</th>
-                    <th style="width: 115px;">小計</th>
-                    <th style="width: 80px;">操作</th>
+                    <th style="width: 100px;">属性</th>
+                    <th style="width: 15%;">ユニット名</th>
+                    <th style="width: 100px;">品番コード</th>
+                    <th style="width: 13%;">品番名</th>
+                    <th style="width: 90px;">使用区分</th>
+                    <th style="width: 65px;">使用数</th>
+                    <th style="width: 105px;">新品単価</th>
+                    <th style="width: 105px;">リユース単価</th>
+                    <th style="width: 105px;">適用単価</th>
+                    <th style="width: 105px;">小計</th>
+                    <th style="width: 95px;">操作</th>
                 </tr>
             </thead>
             <tbody id="parts-tbody">
@@ -289,7 +319,7 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="5" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
+                    <td colspan="6" style="text-align: right; padding-right: 12px;">合計 (機種トータル):</td>
                     <td id="foot-all-new" style="text-align: center;">¥0</td>
                     <td style="text-align: center;">-</td>
                     <td style="text-align: center;">-</td>
@@ -300,7 +330,7 @@
         </table>
     </div>
     <div style="margin-top: 15px; text-align: right;">
-        <button class="btn btn-navy" onclick="addPartGroup()">＋ 新規品番パーツを追加</button>
+        <button class="btn btn-navy" onclick="addPartGroup()">＋ 新規パーツを追加</button>
     </div>
 </div>
 
@@ -322,30 +352,27 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const simRef = db.ref('simulationData_v4');
+const simRef = db.ref('simulationData_v5');
 
 let appData = {
     parents: [
         {
             id: "p1",
-            code: "M-001",
             name: "【M-001】全自動洗濯機 A-1000",
             parts: [
                 {
-                    code: "P-10001",
-                    name: "給水バルブ",
+                    attr: "機構部品",
                     locked: false,
                     units: [
-                        { name: "AAAユニット", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
-                        { name: "BBBユニット", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
+                        { name: "AAAユニット", code: "P-10001", partName: "給水バルブ", choice: "new", qty: 2, newPrice: 12000, reusePrice: 5000 },
+                        { name: "BBBユニット", code: "P-10002", partName: "排水バルブ", choice: "reuse", qty: 1, newPrice: 12000, reusePrice: 5000 }
                     ]
                 },
                 {
-                    code: "P-10002",
-                    name: "駆動モータ",
+                    attr: "電気部品",
                     locked: false,
                     units: [
-                        { name: "CCCユニット", choice: "reuse", qty: 1, newPrice: 18000, reusePrice: 8000 }
+                        { name: "CCCユニット", code: "P-10003", partName: "駆動モータ", choice: "reuse", qty: 1, newPrice: 18000, reusePrice: 8000 }
                     ]
                 }
             ]
@@ -409,7 +436,6 @@ function addParent() {
     saveDataToFirebase();
 }
 
-// ユーティリティ: 数値フォーマット関数
 function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
@@ -419,7 +445,7 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規品番パーツを追加」を押してください。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
         calculateTotals();
         return;
     }
@@ -432,11 +458,12 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
-            // 1行目のときのみ品番コード、品番名を表示（縦結合）
+            // 1行目のときのみ「属性」を表示（縦結合）
             if (uIdx === 0) {
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}"><input type="text" class="text-center" style="width:100%; letter-spacing:0.05em;" value="${part.code}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'code', this.value)"></td>
-                    <td rowspan="${rowSpan}"><input type="text" class="text-center" style="width:100%;" value="${part.name}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'name', this.value)"></td>
+                    <td rowspan="${rowSpan}">
+                        <input type="text" class="text-center" style="width:100%;" value="${part.attr || ''}" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'attr', this.value)" placeholder="例: 電気部品">
+                    </td>
                 `;
             }
 
@@ -444,38 +471,53 @@ function renderTable() {
             const subTotal = appliedPrice * unit.qty;
 
             tr.innerHTML += `
+                <!-- ユニット名 (+ボタン付き) -->
                 <td>
                     <div class="unit-cell-flex">
-                        <input type="text" style="flex:1;" value="${unit.name}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
+                        <input type="text" style="flex:1; min-width:0;" value="${unit.name}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">
                         ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
                     </div>
                 </td>
+                <!-- 品番コード -->
+                <td>
+                    <input type="text" class="text-center" style="width:100%; letter-spacing:0.03em;" value="${unit.code || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'code', this.value)">
+                </td>
+                <!-- 品番名 -->
+                <td>
+                    <input type="text" class="text-center" style="width:100%;" value="${unit.partName || ''}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'partName', this.value)">
+                </td>
+                <!-- 使用区分 -->
                 <td>
                     <select class="select-use-type ${unit.choice === 'new' ? 'type-new' : 'type-reuse'}" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
                         <option value="new" ${unit.choice === 'new' ? 'selected' : ''}>新品</option>
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
+                <!-- 使用数 -->
                 <td>
                     <input type="text" class="text-center" style="width:100%;" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.qty}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)">
                 </td>
+                <!-- 新品単価 -->
                 <td>
                     <input type="text" class="text-right" style="width:100%;" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.newPrice}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)">
                 </td>
+                <!-- リユース単価 -->
                 <td>
                     <input type="text" class="text-right" style="width:100%;" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} 
                         onfocus="this.value='${unit.reusePrice}'" 
                         onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)">
                 </td>
+                <!-- 適用単価 -->
                 <td style="font-weight:bold;">${fmtYen(appliedPrice)}</td>
+                <!-- 小計 -->
                 <td style="font-weight:bold;">${fmtYen(subTotal)}</td>
             `;
 
-            // 1行目のときのみロック/編集ボタン、操作ボタンを表示
+            // 1行目のときのみロック/編集ボタン、削除ボタンを表示
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}">
@@ -483,11 +525,13 @@ function renderTable() {
                             ${isLocked 
                                 ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
                                 : `<button class="btn-lock" onclick="toggleLock(${pIdx})">🔒 確定</button>
-                                   <button class="btn-del" onclick="deletePartGroup(${pIdx})">✕</button>`
+                                   <button class="btn-group-del" onclick="deletePartGroup(${pIdx})">削除</button>`
                             }
                         </div>
                     </td>
                 `;
+            } else if (!isLocked) {
+                // 2行目以降（複数ユニット時）は個別削除ボタンを末尾セルへ（※操作セルは縦結合のため小計の横には置かない）
             }
 
             tbody.appendChild(tr);
@@ -510,11 +554,10 @@ function addPartGroup() {
     if (!parent.parts) parent.parts = [];
 
     parent.parts.push({
-        code: "P-1000" + (1 + parent.parts.length),
-        name: "新規パーツ",
+        attr: "機構部品",
         locked: false,
         units: [
-            { name: "ユニットA", choice: "new", qty: 1, newPrice: 10000, reusePrice: 5000 }
+            { name: "新規ユニット", code: "P-1000" + (1 + parent.parts.length), partName: "新規パーツ", choice: "new", qty: 1, newPrice: 10000, reusePrice: 5000 }
         ]
     });
     saveDataToFirebase();
@@ -525,7 +568,9 @@ function addUnitRow(pIdx) {
     if (!parent || !parent.parts[pIdx]) return;
 
     parent.parts[pIdx].units.push({
-        name: "新規ユニット",
+        name: "追加ユニット",
+        code: "P-1000" + (Math.floor(Math.random() * 90) + 10),
+        partName: "追加パーツ",
         choice: "reuse",
         qty: 1,
         newPrice: 10000,
@@ -545,10 +590,9 @@ function updateUnit(pIdx, uIdx, key, val) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx] || !parent.parts[pIdx].units[uIdx]) return;
 
-    if (key === 'name' || key === 'choice') {
+    if (['name', 'code', 'partName', 'choice'].includes(key)) {
         parent.parts[pIdx].units[uIdx][key] = val;
     } else {
-        // カンマや¥を排除して数値化
         const numVal = parseFloat(String(val).replace(/[^0-9.-]/g, '')) || 0;
         parent.parts[pIdx].units[uIdx][key] = numVal;
     }
@@ -558,7 +602,7 @@ function updateUnit(pIdx, uIdx, key, val) {
 function deletePartGroup(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
-    if (!confirm("このパーツと含まれるユニットを削除しますか？")) return;
+    if (!confirm("このパーツと含まれるユニットをすべて削除しますか？")) return;
 
     parent.parts.splice(pIdx, 1);
     saveDataToFirebase();
