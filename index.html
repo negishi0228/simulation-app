@@ -147,8 +147,11 @@
     .plan-table tbody td { padding: 6px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     .day-sat { background-color: #f0f4ff !important; } 
     .day-sun { background-color: #fff0f0 !important; } 
-    .stock-alert { color: #f56c6c !important; font-weight: bold; background-color: #fff0f0 !important; }
+    .stock-alert { color: #fff !important; font-weight: bold; background-color: #ff4d4f !important; }
     .matrix-model-col { background-color: #f9fbfd; }
+    
+    /* モーダル用カラーピッカー */
+    .color-picker { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
 </style>
 </head>
 <body>
@@ -245,7 +248,6 @@
             </div>
         </div>
 
-        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -258,8 +260,8 @@
             <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
         </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
-            ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
-            ※「マスターリスト」の初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて在庫を計算します。
+            ※入庫セルをクリックすると、「入庫数・色・コメント」を編集できます。<br>
+            ※マスターの初期在庫と入庫数から、機種開始日の必要数を引いて在庫を計算します。
         </p>
         
         <div id="view-plan-content"></div>
@@ -308,6 +310,37 @@
     </div>
 </div>
 
+<!-- ==========================================
+     入庫設定用モーダル
+=========================================== -->
+<div id="arrival-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:6px; padding:20px; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">入庫の設定</h3>
+        <p id="modal-arr-target" style="font-size:0.85rem; color:var(--primary-navy); font-weight:bold; margin-bottom:15px;"></p>
+        
+        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">入庫数</label>
+        <input type="text" id="modal-arr-qty" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; font-size:1rem; text-align:right;" onfocus="this.select();" onkeydown="if(event.key==='Enter') saveArrivalModal();">
+        
+        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">セルの色付け</label>
+        <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <div class="color-picker" data-color="" style="background-color:#e1f3d8;" onclick="selectModalColor('')" title="デフォルト(薄緑)"></div>
+            <div class="color-picker" data-color="#fde2e2" style="background-color:#fde2e2;" onclick="selectModalColor('#fde2e2')" title="赤(注意)"></div>
+            <div class="color-picker" data-color="#faecd8" style="background-color:#faecd8;" onclick="selectModalColor('#faecd8')" title="黄(保留)"></div>
+            <div class="color-picker" data-color="#d9ecff" style="background-color:#d9ecff;" onclick="selectModalColor('#d9ecff')" title="青(完了)"></div>
+            <div class="color-picker" data-color="#e9e9eb" style="background-color:#e9e9eb;" onclick="selectModalColor('#e9e9eb')" title="グレー(無効)"></div>
+        </div>
+        <input type="hidden" id="modal-arr-color">
+        
+        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">コメント (備忘録)</label>
+        <textarea id="modal-arr-comment" style="width:100%; height:60px; padding:6px; border:1px solid #ccc; border-radius:4px; resize:none; margin-bottom:16px; font-size:0.85rem; outline:none;"></textarea>
+        
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn btn-outline" style="padding:6px 12px;" onclick="closeArrivalModal()">キャンセル</button>
+            <button class="btn btn-navy" style="padding:6px 12px;" onclick="saveArrivalModal()">保存する</button>
+        </div>
+    </div>
+</div>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -326,8 +359,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データがリセットされないよう保存先名を固定化 ★
-const simRef = db.ref('simulationData_main');
+// ★ データリセット用: バージョン v22 (色付け・コメント・背景色対応)
+const simRef = db.ref('simulationData_v22');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
 let isCompareMode = false;
@@ -438,7 +471,6 @@ function switchTab(tabId) {
 function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
-// 各画面の一斉描画
 function renderAllViews() {
     renderParentButtons();
     if (isCompareMode) renderMatrixCompareView();
@@ -737,6 +769,7 @@ function renderMatrixCompareView() {
             html += `</tr>`;
         });
 
+        // 合計行
         html += `</tbody><tfoot><tr>
                     <td colspan="6" class="text-right" style="padding-right:12px;">シミュレーション合計額:</td>`;
         selectedParents.forEach(p => {
@@ -750,13 +783,50 @@ function renderMatrixCompareView() {
 }
 
 // ==========================================
-// 📅 計画表 (入庫付きカレンダー・在庫管理)
+// 📅 計画表 (入庫モーダル・カレンダー・在庫管理)
 // ==========================================
-function updateArrival(dateStr, code, val) {
+let currentModalDate = "";
+let currentModalCode = "";
+
+function openArrivalModal(elem) {
+    currentModalDate = elem.getAttribute("data-date");
+    currentModalCode = elem.getAttribute("data-code");
+    let qty = parseInt(elem.getAttribute("data-qty")) || 0;
+    let color = elem.getAttribute("data-color") || "";
+    let comment = elem.getAttribute("data-comment") || "";
+    let partName = elem.getAttribute("data-part") || "";
+    
+    document.getElementById("modal-arr-target").innerText = `${currentModalDate} / ${partName} (${currentModalCode})`;
+    document.getElementById("modal-arr-qty").value = qty ? fmtNum(qty) : "";
+    document.getElementById("modal-arr-comment").value = comment;
+    selectModalColor(color || "");
+    
+    document.getElementById("arrival-modal").style.display = "flex";
+    setTimeout(() => { document.getElementById("modal-arr-qty").focus(); }, 100);
+}
+
+function closeArrivalModal() { document.getElementById("arrival-modal").style.display = "none"; }
+
+function selectModalColor(color) {
+    document.getElementById("modal-arr-color").value = color;
+    document.querySelectorAll(".color-picker").forEach(el => {
+        if(el.getAttribute("data-color") === color) el.style.borderColor = "var(--text-main)";
+        else el.style.borderColor = "transparent";
+    });
+}
+
+function saveArrivalModal() {
+    let qtyStr = document.getElementById("modal-arr-qty").value;
+    let qty = parseInt(String(qtyStr).replace(/[^0-9.-]/g, '')) || 0;
+    let color = document.getElementById("modal-arr-color").value;
+    let comment = document.getElementById("modal-arr-comment").value.trim();
+    
     if (!appData.arrivals) appData.arrivals = {};
-    if (!appData.arrivals[dateStr]) appData.arrivals[dateStr] = {};
-    appData.arrivals[dateStr][code] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
+    if (!appData.arrivals[currentModalDate]) appData.arrivals[currentModalDate] = {};
+    
+    appData.arrivals[currentModalDate][currentModalCode] = { qty: qty, color: color, comment: comment };
     saveDataToFirebase();
+    closeArrivalModal();
 }
 
 function showShortageAlerts() {
@@ -845,6 +915,7 @@ function renderPlanScheduleView() {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
+        // ヘッダー背景色はネイビー統一、文字色で区別
         html += `
             <th style="background-color:var(--primary-navy); color:#f56c6c; border-left:2px solid #fff; min-width:55px;">使用</th>
             <th style="background-color:var(--primary-navy); color:#67c23a; border-left:1px solid #fff; width:60px; min-width:60px;">入庫</th>
@@ -890,33 +961,46 @@ function renderPlanScheduleView() {
 
         stockTrackingMap.forEach((v, code) => {
             const req = dailyReqMap.get(code) || 0;
-            const arr = (appData.arrivals && appData.arrivals[isoDate] && appData.arrivals[isoDate][code]) ? appData.arrivals[isoDate][code] : 0;
             
-            v.runningStock += arr;
+            // 入庫データのパース
+            let arrVal = appData.arrivals && appData.arrivals[isoDate] && appData.arrivals[isoDate][code];
+            let arrQty = 0, arrColor = "", arrComment = "";
+            if (typeof arrVal === 'object') {
+                arrQty = parseInt(arrVal.qty) || 0;
+                arrColor = arrVal.color || "";
+                arrComment = arrVal.comment || "";
+            } else if (arrVal) {
+                arrQty = parseInt(arrVal) || 0;
+            }
+            
+            v.runningStock += arrQty;
             v.runningStock -= req;
             
             const reqStr = req > 0 ? fmtNum(req) : '';
-            
             if (v.runningStock < 0 && req > 0) {
                 window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
             }
             
-            const stockClass = v.runningStock < 0 ? 'stock-alert' : '';
+            // 使用セル (薄赤)
+            html += `<td style="border-left:2px solid #fff; text-align:center; background-color:${req>0 ? '#fde2e2' : '#fff5f5'}; color:#c9302c; font-weight:bold;">${reqStr}</td>`;
             
-            // 使用セル
-            html += `<td style="border-left:2px solid #ebeef5; text-align:center; color:#f56c6c; font-weight:bold; background-color:${req>0 ? '#fff0f0' : 'transparent'};">${reqStr}</td>`;
+            // 入庫セル (薄緑ベース + モーダル起動)
+            let cellBg = arrColor ? arrColor : '#e1f3d8';
+            let badge = arrComment ? `<div style="position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #f56c6c; border-left:8px solid transparent;" title="${arrComment.replace(/"/g, '&quot;')}"></div>` : "";
+            let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
-            // 入庫セル（幅を狭めてカンマ対応＆フォーカス時に全選択）
-            html += `<td style="padding:2px; width:60px;">
-                        <input type="text" class="text-center" style="width:100%; padding:4px 1px; font-size:0.85rem; border:1px solid var(--border-color); border-radius:3px;" 
-                               value="${arr ? fmtNum(arr) : ''}" placeholder="0" 
-                               onkeydown="if(event.key==='Enter') this.blur();" 
-                               onfocus="this.value='${arr || ''}'; this.select();" 
-                               onblur="updateArrival('${isoDate}', '${code}', this.value)">
+            html += `<td style="background-color:${cellBg}; border-left:1px solid #fff; position:relative; cursor:pointer; font-weight:bold; color:#2b542c; width:60px;" 
+                         data-date="${isoDate}" data-code="${code}" data-qty="${arrQty}" data-color="${arrColor}" data-comment="${arrComment.replace(/"/g, '&quot;')}" data-part="${v.partName}"
+                         onclick="openArrivalModal(this)">
+                         ${badge}
+                         ${displayArr}
                      </td>`;
                      
-            // 在庫セル
-            html += `<td class="${stockClass}" style="text-align:right; font-weight:bold; padding-right:8px; border-left:1px solid #ebeef5;">${fmtNum(v.runningStock)}</td>`;
+            // 在庫セル (グレーネイビー / マイナス時は赤)
+            const stockBg = v.runningStock < 0 ? '#ff4d4f' : '#d3e0ea';
+            const stockColor = v.runningStock < 0 ? '#fff' : '#1f5078';
+            
+            html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;">${fmtNum(v.runningStock)}</td>`;
         });
 
         html += `</tr>`;
