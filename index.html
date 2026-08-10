@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>機種別リユースシミュレーター</title>
+<!-- チュートリアル用ライブラリ (Driver.js) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+
 <style>
     :root {
         --primary-navy: #1f5078;
@@ -144,7 +148,6 @@
     .badge-choice { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
 
     /* スケジュール表 (計画表) 専用 */
-    /* なるべくページに収まるようにフォントサイズとパディングを調整 */
     .plan-table { min-width: 1000px; border-collapse: collapse; font-size: 0.82rem; }
     .plan-table thead th { position: sticky; z-index: 10; border: 1px solid rgba(255,255,255,0.2); padding: 8px 4px; }
     .plan-table tbody td { padding: 6px 2px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
@@ -163,6 +166,12 @@
         background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee);
         background-size: 8px 8px; background-position: 0 0, 4px 4px;
     }
+    
+    /* マニュアルモーダルのスタイル */
+    .manual-section { margin-bottom: 20px; }
+    .manual-section h4 { color: var(--primary-navy); border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 10px; }
+    .manual-section ul { margin: 0; padding-left: 20px; color: var(--text-sub); font-size: 0.9rem; line-height: 1.6; }
+    .manual-section li { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -173,12 +182,18 @@
         <div class="header-top-row">
             <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
             
-            <div style="display:flex; align-items:center; gap:12px;">
-                <button class="btn" style="background-color: #fff; border: 1px solid #ccc; color: #d93025; padding: 6px 16px; font-size: 0.85rem;" onclick="openMailSelectModal()">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="btn-tutorial" class="btn btn-navy" style="padding: 6px 12px; font-size: 0.85rem;" onclick="startTutorial()">
+                    🔰 チュートリアル
+                </button>
+                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;" onclick="openManualModal()">
+                    📖 マニュアル
+                </button>
+                <button class="btn" style="background-color: #fff; border: 1px solid #ccc; color: #d93025; padding: 6px 12px; font-size: 0.85rem;" onclick="openMailSelectModal()">
                     ✉️ 更新をGmailで通知
                 </button>
                 <div id="update-notification" style="display:none; background-color:#e6a23c; color:white; padding:6px 16px; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15);" onclick="applyPendingData()">
-                    🔄 新しい更新があります（クリックで反映）
+                    🔄 新しい更新があります
                 </div>
                 <button id="btn-sync-toggle" class="btn" style="background-color: #eefbf1; color: #34c759; border: 2px solid #34c759; padding: 6px 16px; font-size: 0.85rem; border-radius: 4px;" onclick="toggleAutoSync()">
                     ● リアルタイム同期：ON
@@ -186,7 +201,7 @@
             </div>
         </div>
         
-        <div class="tab-container">
+        <div class="tab-container" id="main-tabs">
             <button class="tab-btn active" id="tab-btn-sim" onclick="switchTab('sim')">シミュレーター</button>
             <button class="tab-btn" id="tab-btn-plan" onclick="switchTab('plan')">📅 計画表 (在庫管理)</button>
             <button class="tab-btn" id="tab-btn-master" onclick="switchTab('master')">⚙️ 品番リスト設定</button>
@@ -197,7 +212,7 @@
          タブ1: シミュレーター画面
     =========================================== -->
     <div id="view-sim" class="tab-content active">
-        <div class="header-card">
+        <div class="header-card" id="sim-controls">
             <div id="compare-instructions" style="display:none; color:#e6a23c; font-weight:bold; font-size:0.9rem;">
                 ※ 比較したい機種のボタンをクリックして選択してください（複数選択可）
             </div>
@@ -222,9 +237,8 @@
             </div>
         </div>
 
-        <!-- 個別表示モード -->
         <div id="single-view">
-            <div class="kpi-grid">
+            <div class="kpi-grid" id="sim-kpi">
                 <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
                 <div class="kpi-card"><div class="kpi-title">現在シミュレーション額</div><div class="kpi-value" id="kpi-current">¥0</div></div>
                 <div class="kpi-card"><div class="kpi-title">リユース活用 削減金額</div><div class="kpi-value" id="kpi-savings">¥0</div></div>
@@ -235,7 +249,7 @@
                 <button class="btn btn-excel" onclick="exportTableToCSV('#sim-table', 'シミュレーター.csv')">📥 CSV出力</button>
             </div>
 
-            <div class="table-card">
+            <div class="table-card" id="sim-table-area">
                 <table id="sim-table" style="min-width: 1280px;">
                     <thead>
                         <tr>
@@ -270,7 +284,6 @@
             </div>
         </div>
 
-        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -300,7 +313,7 @@
     <div id="view-master" class="tab-content">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
             <!-- 部品マスター -->
-            <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div id="master-parts-area" style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">部品マスターリスト (初期在庫の設定)</h3>
                 <div class="table-card" style="box-shadow:none;">
                     <table style="min-width:auto;">
@@ -342,7 +355,6 @@
                 <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">✉️ Gmail 通知設定</h3>
                 
                 <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-                    <!-- アドレスリスト -->
                     <div style="flex: 1; min-width: 300px;">
                         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">送信先メールアドレス</label>
                         <div class="table-card" style="box-shadow:none;">
@@ -359,7 +371,6 @@
                         <button class="btn btn-navy" style="margin-top:12px;" onclick="addMailAddress()">＋ アドレスを追加</button>
                     </div>
                     
-                    <!-- 定型文 -->
                     <div style="flex: 1; min-width: 300px;">
                         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">メール件名</label>
                         <input type="text" id="mail-subject" style="margin-bottom: 16px; padding: 10px;" onkeydown="if(event.key==='Enter') this.blur();" onchange="updateMailSettings('subject', this.value)" onfocus="this.select();">
@@ -370,6 +381,55 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     マニュアル表示用モーダル
+=========================================== -->
+<div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:6px; padding:24px; width:700px; max-height:85vh; overflow-y:auto; box-shadow:0 4px 15px rgba(0,0,0,0.3); position:relative;">
+        <button style="position:absolute; top:15px; right:15px; background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:#999;" onclick="closeManualModal()">✕</button>
+        <h2 style="margin-top:0; color:var(--primary-navy); border-bottom:3px solid var(--border-color); padding-bottom:10px;">📖 アプリ運用マニュアル</h2>
+        
+        <div class="manual-section">
+            <h4>🎯 このアプリの目的</h4>
+            <p style="font-size:0.9rem; line-height:1.6; color:var(--text-sub);">
+                新機種の立ち上げ時に、部品を「新品」で手配するか「リユース品」を活用するかをシミュレーションし、<b>コスト削減効果を可視化</b>します。<br>
+                また、リユース設定した部品の必要数をカレンダーに展開し、<b>在庫不足が起きないよう入庫予定を管理</b>することが目的です。
+            </p>
+        </div>
+
+        <div class="manual-section">
+            <h4>⚙️ 1. 品番リスト設定（マスター設定）</h4>
+            <ul>
+                <li>扱う「部品」や「ユニット」の情報を事前に登録します。</li>
+                <li>ここで「使用区分（新品/リユース）」と「初期在庫数」を設定しておくことで、シミュレーターや計画表に自動連携されます。</li>
+            </ul>
+        </div>
+
+        <div class="manual-section">
+            <h4>📊 2. シミュレーター画面</h4>
+            <ul>
+                <li><b>機種の登録：</b>「＋ 新規機種登録」から対象の機種を作成し、使用期間（開始日〜終了日）を設定します。</li>
+                <li><b>部品の追加：</b>その機種で使う部品を追加し、「新品」か「リユース」かを選択します。（マスターの情報が自動入力されます）</li>
+                <li><b>コスト確認：</b>リユース品を活用した場合の「削減金額」と「削減率」が上部のカードにリアルタイムで表示されます。</li>
+                <li><b>確定とロック：</b>入力が終わったら「🔒 確定」ボタンを押すと、誤操作で書き換わるのを防げます。</li>
+            </ul>
+        </div>
+
+        <div class="manual-section">
+            <h4>📅 3. 計画表（在庫管理表）画面</h4>
+            <ul>
+                <li>シミュレーターで「リユース」に設定した部品の必要数が、機種の開始日（カレンダー）に自動で表示されます。</li>
+                <li><b>入庫の入力：</b>「入庫」のセルをクリックすると、入庫予定数やコメント、セルの色付けが行えます。</li>
+                <li><b>在庫の確認：</b>「初期在庫＋入庫数－使用数」が自動計算され、不足（マイナス）になるとセルが赤字で警告されます。</li>
+            </ul>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn btn-navy" onclick="closeManualModal()">閉じる</button>
         </div>
     </div>
 </div>
@@ -419,7 +479,7 @@
         
         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">セルの色付け (くっきりカラー)</label>
         <div style="display:flex; gap:12px; margin-bottom:20px;">
-            <div class="color-picker clear-bg" data-color="" onclick="selectModalColor('')" title="元の色に戻す (クリア)">✕</div>
+            <div class="color-picker clear-bg" data-color="" onclick="selectModalColor('')" title="元の色に戻す (クリア)"></div>
             <div class="color-picker" data-color="#ff4d4f" style="background-color:#ff4d4f;" onclick="selectModalColor('#ff4d4f')" title="赤"></div>
             <div class="color-picker" data-color="#1890ff" style="background-color:#1890ff;" onclick="selectModalColor('#1890ff')" title="青"></div>
             <div class="color-picker" data-color="#faad14" style="background-color:#faad14;" onclick="selectModalColor('#faad14')" title="黄"></div>
@@ -463,8 +523,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v27 (幅調整・メール選択対応)
-const simRef = db.ref('simulationData_v27');
+// ★ データリセット用: バージョン v28
+const simRef = db.ref('simulationData_v28');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -481,6 +541,73 @@ let currentModalDate = "";
 let currentModalCode = "";
 let tempComments = [];
 window.currentShortages = [];
+
+// ==============================
+// チュートリアル & マニュアル
+// ==============================
+function openManualModal() {
+    document.getElementById("manual-modal").style.display = "flex";
+}
+function closeManualModal() {
+    document.getElementById("manual-modal").style.display = "none";
+}
+
+function startTutorial() {
+    const driver = window.driver.js.driver;
+    const driverObj = driver({
+        showProgress: true,
+        allowClose: true,
+        nextBtnText: '次へ ❯',
+        prevBtnText: '❮ 戻る',
+        doneBtnText: '完了',
+        steps: [
+            { 
+                element: '.app-title', 
+                popover: { title: 'ようこそ！', description: '機種別リユースシミュレーターへようこそ。<br>基本的な使い方をステップ・バイ・ステップでご案内します。', side: "bottom", align: 'start' } 
+            },
+            { 
+                element: '#tab-btn-master', 
+                popover: { title: '1. マスター設定', description: 'まずはここから！<br>使用する「部品」や「ユニット」、「初期在庫」を登録します。', side: "bottom" },
+                onHighlightStarted: () => switchTab('master') 
+            },
+            { 
+                element: '#master-parts-area', 
+                popover: { title: '部品の登録', description: 'ここで部品情報と【新品/リユース】の区分を設定しておくと、他の画面で自動的に連携されます。', side: "right" } 
+            },
+            { 
+                element: '#tab-btn-sim', 
+                popover: { title: '2. シミュレーション', description: '部品の登録が終わったら、シミュレーター画面へ移動します。', side: "bottom" },
+                onHighlightStarted: () => switchTab('sim') 
+            },
+            { 
+                element: '#sim-controls', 
+                popover: { title: '機種と使用期間の設定', description: '「新規機種登録」で機種を追加し、カレンダーでその機種の「使用期間（生産期間）」を設定します。', side: "bottom" } 
+            },
+            { 
+                element: '#sim-table-area', 
+                popover: { title: '部品の追加と単価設定', description: '対象機種で使う部品を追加します。<br>「新品単価」「リユース単価」を入力し、リユースを選択するとコスト削減効果が計算されます。', side: "top" } 
+            },
+            { 
+                element: '#sim-kpi', 
+                popover: { title: '削減効果の確認', description: '設定した部品のコストと、どれだけ削減できたか（削減金額・削減率）がここにリアルタイム表示されます！', side: "bottom" } 
+            },
+            { 
+                element: '#tab-btn-plan', 
+                popover: { title: '3. 在庫管理（計画表）', description: '最後に計画表タブを見てみましょう。', side: "bottom" },
+                onHighlightStarted: () => switchTab('plan') 
+            },
+            { 
+                element: '#view-plan-content', 
+                popover: { title: '入庫と在庫の管理', description: 'シミュレーションで「リユース」とした部品の必要数が、機種の開始日に自動で展開されます。<br><br>「入庫セル」をクリックして入庫予定を入力し、在庫がマイナス（赤字）にならないよう管理しましょう。', side: "top" } 
+            },
+            { 
+                element: '#btn-tutorial', 
+                popover: { title: 'チュートリアル完了🎉', description: '基本的な流れは以上です！<br>より詳しい説明は隣の「📖 マニュアル」ボタンからいつでも確認できます。', side: "bottom" } 
+            }
+        ]
+    });
+    driverObj.drive();
+}
 
 // ==============================
 // Gmail 送信 ＆ CSV出力機能
@@ -533,7 +660,6 @@ function executeSendMail() {
     bodyText += "\n\n" + window.location.href;
     const body = encodeURIComponent(bodyText);
     
-    // GmailをWebで開くURLスキーマ
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${emails}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
     
@@ -578,32 +704,6 @@ function exportTableToCSV(tableSelector, filename) {
 // ==============================
 // 同期制御
 // ==============================
-function toggleAutoSync() {
-    isAutoSync = !isAutoSync;
-    const btn = document.getElementById('btn-sync-toggle');
-    if (isAutoSync) {
-        btn.innerHTML = "● リアルタイム同期：ON";
-        btn.style.borderColor = "#34c759";
-        btn.style.color = "#34c759";
-        btn.style.backgroundColor = "#eefbf1";
-        if (pendingData) applyPendingData();
-    } else {
-        btn.innerHTML = "⏸ リアルタイム同期：OFF (一時停止)";
-        btn.style.borderColor = "#f56c6c";
-        btn.style.color = "#f56c6c";
-        btn.style.backgroundColor = "#fff0f0";
-    }
-}
-
-function applyPendingData() {
-    if (pendingData) {
-        appData = pendingData;
-        pendingData = null;
-        document.getElementById('update-notification').style.display = 'none';
-        renderAllViews();
-    }
-}
-
 simRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -630,46 +730,6 @@ simRef.on('value', (snapshot) => {
         saveDataToFirebase();
     }
 });
-
-function getInitialSampleData() {
-    return {
-        masterParts: [
-            { itemName: "AAA", code: "1234567", partName: "AAA 新品", choice: "new", stock: 0 },
-            { itemName: "AAA", code: "1234568", partName: "AAA リユース", choice: "reuse", stock: 1500 },
-            { itemName: "BBB", code: "1234569", partName: "BBB 新品", choice: "new", stock: 0 },
-            { itemName: "BBB", code: "1234570", partName: "BBB リユース", choice: "reuse", stock: 800 }
-        ],
-        masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
-        parents: [
-            {
-                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01", isHidden: false,
-                parts: [{
-                    itemName: "AAA", locked: false,
-                    units: [
-                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
-                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
-                    ]
-                }]
-            },
-            {
-                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15", isHidden: false,
-                parts: [{
-                    itemName: "AAA", locked: false,
-                    units: [
-                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 600, newPrice: 12000, reusePrice: 5000 }
-                    ]
-                }]
-            }
-        ],
-        currentParentId: "p1",
-        arrivals: {},
-        mailSettings: {
-            emails: [""],
-            subject: "【リユースシミュレーター】データ更新のお知らせ",
-            body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。"
-        }
-    };
-}
 
 function saveDataToFirebase() {
     isLocalUpdate = true;
@@ -706,12 +766,9 @@ function openVisibilityModal() {
     });
     document.getElementById("visibility-modal").style.display = "flex";
 }
-function closeVisibilityModal() {
-    document.getElementById("visibility-modal").style.display = "none";
-}
+function closeVisibilityModal() { document.getElementById("visibility-modal").style.display = "none"; }
 function toggleParentVisibility(idx, isChecked) {
     appData.parents[idx].isHidden = !isChecked;
-    
     const visibleParents = appData.parents.filter(p => !p.isHidden);
     if(visibleParents.length > 0 && appData.parents[idx].id === appData.currentParentId && appData.parents[idx].isHidden) {
         appData.currentParentId = visibleParents[0].id;
@@ -784,11 +841,8 @@ function renderMailSettings() {
 
 function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); saveDataToFirebase(); }
 function updateMasterPart(idx, key, val) { 
-    if (key === 'stock') {
-        appData.masterParts[idx][key] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
-    } else {
-        appData.masterParts[idx][key] = val; 
-    }
+    if (key === 'stock') appData.masterParts[idx][key] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
+    else appData.masterParts[idx][key] = val; 
     saveDataToFirebase(); 
 }
 function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
@@ -802,18 +856,9 @@ function addMailAddress() {
     appData.mailSettings.emails.push("");
     saveDataToFirebase();
 }
-function updateMailAddress(idx, val) {
-    appData.mailSettings.emails[idx] = val;
-    saveDataToFirebase();
-}
-function deleteMailAddress(idx) {
-    appData.mailSettings.emails.splice(idx, 1);
-    saveDataToFirebase();
-}
-function updateMailSettings(key, val) {
-    appData.mailSettings[key] = val;
-    saveDataToFirebase();
-}
+function updateMailAddress(idx, val) { appData.mailSettings.emails[idx] = val; saveDataToFirebase(); }
+function deleteMailAddress(idx) { appData.mailSettings.emails.splice(idx, 1); saveDataToFirebase(); }
+function updateMailSettings(key, val) { appData.mailSettings[key] = val; saveDataToFirebase(); }
 
 // ==========================================
 // 機種ボタン＆ドラッグアンドドロップ
@@ -880,8 +925,6 @@ function updateParentDate(key, val) {
     const curr = getCurrentParent();
     if(!curr) return;
     curr[key] = val;
-    const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
-    document.getElementById(inputId).value = val;
     saveDataToFirebase();
 }
 
@@ -944,7 +987,6 @@ function toggleCompareMode() {
         document.getElementById('compare-instructions').style.display = 'block';
         
         compareSelectedIds.clear();
-        // 表示されている全機種を初期選択
         appData.parents.filter(p => !p.isHidden).forEach(p => compareSelectedIds.add(p.id));
         
         renderParentButtons();
@@ -1288,7 +1330,6 @@ function renderPlanScheduleView() {
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-        // 日付をコンパクトに (yyyy/mm/dd)
         const dateStr = `${yyyy}/${mm}/${dd}`;
         const yIdx = d.getDay();
         const yStr = youbi[yIdx];
@@ -1354,7 +1395,7 @@ function renderPlanScheduleView() {
             let titleText = hasComment ? arrComments.map(c => `[${c.date}] ${c.text}`).join('\n') : "";
             let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
-            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:50px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
+            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:55px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
                          data-date="${isoDate}" data-code="${code}" title="${titleText}"
                          onclick="openArrivalModal(this)">
                          ${badge}
