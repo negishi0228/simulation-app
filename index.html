@@ -88,13 +88,13 @@
     .parent-btn:hover:not(.active):not(.compare-selected) { background-color: #f5f7fa; }
     .parent-btn.drag-over { border-left: 3px solid var(--primary-navy); padding-left: 14px; }
 
-    select, input[type="text"], input[type="number"], input[type="date"] {
+    select, input[type="text"], input[type="number"], input[type="date"], textarea {
         padding: 7px 6px; border: 1px solid var(--border-color); border-radius: 4px;
         font-size: 0.88rem; outline: none; background-color: #fff; width: 100%;
-        transition: border-color 0.2s;
+        transition: border-color 0.2s; font-family: inherit;
     }
-    select:disabled, input:disabled { background-color: #f5f7fa; color: #606266; cursor: not-allowed; border-color: #e4e7ed; }
-    input:focus, select:focus { border-color: var(--primary-navy); }
+    select:disabled, input:disabled, textarea:disabled { background-color: #f5f7fa; color: #606266; cursor: not-allowed; border-color: #e4e7ed; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary-navy); }
 
     .btn { padding: 9px 18px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
     .btn-navy { background-color: var(--primary-navy); color: white; }
@@ -104,6 +104,8 @@
     .btn-compare-active { background-color: #e6a23c; color: white; border: 1px solid #e6a23c; }
     .btn-alert { background-color: #fff0f0; color: #f56c6c; border: 1px solid #f56c6c; }
     .btn-alert:hover { background-color: #f56c6c; color: white; }
+    .btn-excel { background-color: #107c41; color: white; }
+    .btn-excel:hover { background-color: #0c5e31; }
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
@@ -171,6 +173,9 @@
             <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
             
             <div style="display:flex; align-items:center; gap:12px;">
+                <button class="btn" style="background-color: #fff; border: 1px solid #ccc; color: #d93025; padding: 6px 16px; font-size: 0.85rem;" onclick="sendMailNotification()">
+                    ✉️ 更新をGmailで通知
+                </button>
                 <div id="update-notification" style="display:none; background-color:#e6a23c; color:white; padding:6px 16px; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15);" onclick="applyPendingData()">
                     🔄 新しい更新があります（クリックで反映）
                 </div>
@@ -196,7 +201,10 @@
                 ※ 比較したい機種のボタンをクリックして選択してください（複数選択可）
             </div>
             
-            <div class="parent-selector" id="parent-button-list"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="parent-selector" id="parent-button-list"></div>
+                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;" onclick="openVisibilityModal()">⚙️ 表示設定</button>
+            </div>
             
             <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div style="display:flex; align-items:center; gap:8px;" id="date-settings-area">
@@ -213,6 +221,7 @@
             </div>
         </div>
 
+        <!-- 個別表示モード -->
         <div id="single-view">
             <div class="kpi-grid">
                 <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
@@ -221,8 +230,12 @@
                 <div class="kpi-card"><div class="kpi-title">コスト削減率</div><div class="kpi-value" id="kpi-rate">0.0%</div></div>
             </div>
 
+            <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+                <button class="btn btn-excel" onclick="exportTableToCSV('#sim-table', 'シミュレーター.csv')">📥 CSV出力</button>
+            </div>
+
             <div class="table-card">
-                <table style="min-width: 1280px;">
+                <table id="sim-table" style="min-width: 1280px;">
                     <thead>
                         <tr>
                             <th style="width: 13%;">品名 <br><span style="font-size:0.75rem; font-weight:normal;">(確定/削除)</span></th>
@@ -256,6 +269,7 @@
             </div>
         </div>
 
+        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -265,21 +279,26 @@
     <div id="view-plan" class="tab-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h2 style="color:var(--primary-navy); margin:0; font-size:1.3rem;">📅 リユース部品 計画・在庫管理表</h2>
-            <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-outline" id="btn-toggle-stockview" onclick="toggleStockOnlyView()">👀 在庫管理表のみ表示</button>
+                <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
+                <button class="btn btn-excel" onclick="exportTableToCSV('#plan-table', '計画表.csv')">📥 CSV出力</button>
+            </div>
         </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
-            ※入庫セルをクリックすると、「入庫数・色・コメント履歴」を編集できます。<br>
-            ※マスターの初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて在庫を計算します。
+            ※入庫セルをクリックすると、「日付・入庫数・色・コメント履歴」を編集できます。<br>
+            ※マスターの初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて残庫を計算します。
         </p>
         
         <div id="view-plan-content"></div>
     </div>
 
     <!-- ==========================================
-         タブ3: 品番リスト設定（マスターデータ）画面
+         タブ3: 品番リスト設定（マスター・通知設定）画面
     =========================================== -->
     <div id="view-master" class="tab-content">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+            <!-- 部品マスター -->
             <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">部品マスターリスト (初期在庫の設定)</h3>
                 <div class="table-card" style="box-shadow:none;">
@@ -299,6 +318,8 @@
                 </div>
                 <button class="btn btn-navy" style="margin-top:12px;" onclick="addMasterPart()">＋ 品番を追加</button>
             </div>
+            
+            <!-- ユニットマスター -->
             <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">ユニットマスター</h3>
                 <div class="table-card" style="box-shadow:none;">
@@ -314,6 +335,54 @@
                 </div>
                 <button class="btn btn-navy" style="margin-top:12px;" onclick="addMasterUnit()">＋ ユニットを追加</button>
             </div>
+
+            <!-- Gmail 通知設定 -->
+            <div style="background:var(--card-bg); border-radius:6px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05); grid-column: 1 / -1;">
+                <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:2px solid var(--border-color); padding-bottom:10px;">✉️ Gmail 通知設定</h3>
+                
+                <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                    <!-- アドレスリスト -->
+                    <div style="flex: 1; min-width: 300px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">送信先メールアドレス</label>
+                        <div class="table-card" style="box-shadow:none;">
+                            <table style="min-width:auto;">
+                                <thead>
+                                    <tr>
+                                        <th style="width:80%;">メールアドレス</th>
+                                        <th style="width:20%;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mail-list-tbody"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-navy" style="margin-top:12px;" onclick="addMailAddress()">＋ アドレスを追加</button>
+                    </div>
+                    
+                    <!-- 定型文 -->
+                    <div style="flex: 1; min-width: 300px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">メール件名</label>
+                        <input type="text" id="mail-subject" style="margin-bottom: 16px; padding: 10px;" onkeydown="if(event.key==='Enter') this.blur();" onchange="updateMailSettings('subject', this.value)" onfocus="this.select();">
+                        
+                        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">メール本文（定型文）</label>
+                        <textarea id="mail-body" style="width:100%; height:120px; padding:10px; border:1px solid var(--border-color); border-radius:4px; resize:vertical; font-size:0.88rem;" onchange="updateMailSettings('body', this.value)"></textarea>
+                        <p style="font-size:0.8rem; color:var(--text-sub); margin-top:4px;">※ 送信時に現在のページのURLが自動で末尾に付与されます。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     機種表示設定モーダル
+=========================================== -->
+<div id="visibility-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:6px; padding:20px; width:340px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">👁️ 機種の表示設定</h3>
+        <p style="font-size:0.85rem; color:var(--text-sub);">チェックを外した機種は非表示になります。</p>
+        <div id="visibility-list" style="max-height: 300px; overflow-y:auto; margin-bottom:16px;"></div>
+        <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-navy" style="padding:6px 16px;" onclick="closeVisibilityModal()">完了</button>
         </div>
     </div>
 </div>
@@ -325,6 +394,9 @@
     <div style="background:#fff; border-radius:6px; padding:20px; width:380px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">入庫・コメント設定</h3>
         <p id="modal-arr-target-name" style="font-size:0.9rem; color:var(--primary-navy); font-weight:bold; margin-bottom:15px;"></p>
+        
+        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">対象日付</label>
+        <input type="date" id="modal-arr-date" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; outline:none;">
         
         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">入庫数</label>
         <input type="text" id="modal-arr-qty" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; font-size:1rem; text-align:right; outline:none;" onfocus="this.select();" onkeydown="if(event.key==='Enter') saveArrivalModal();">
@@ -375,10 +447,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v24
-const simRef = db.ref('simulationData_v24');
+// ★ データリセット用: バージョン v25
+const simRef = db.ref('simulationData_v25');
 
-let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
+let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
 let compareSelectedIds = new Set();
 let draggedParentIdx = null;
@@ -387,12 +459,72 @@ let isAutoSync = true;
 let isLocalUpdate = false;
 let pendingData = null;
 
-// モーダル用一時データ
+let isStockOnlyView = false;
+
 let currentModalDate = "";
 let currentModalCode = "";
 let tempComments = [];
 window.currentShortages = [];
 
+// ==============================
+// Gmail 送信 ＆ CSV出力機能
+// ==============================
+function sendMailNotification() {
+    if (!appData.mailSettings) {
+        alert("メール設定が見つかりません。「品番リスト設定」タブから設定してください。");
+        return;
+    }
+    
+    const emails = (appData.mailSettings.emails || []).filter(e => e.trim() !== "").join(',');
+    const subject = encodeURIComponent(appData.mailSettings.subject || "【リユースシミュレーター】データ更新のお知らせ");
+    
+    let bodyText = appData.mailSettings.body || "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。\n\n";
+    bodyText += "\n\n" + window.location.href;
+    const body = encodeURIComponent(bodyText);
+    
+    // GmailをWebで開くURLスキーマ
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${emails}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
+}
+
+function exportTableToCSV(tableSelector, filename) {
+    const table = document.querySelector(tableSelector);
+    if (!table) return alert("出力するデータがありません。");
+    
+    let csv = [];
+    const rows = table.querySelectorAll("tr");
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) {
+            let val = "";
+            const input = cols[j].querySelector("input, select");
+            if (input) {
+                if(input.tagName === "SELECT") {
+                    val = input.options[input.selectedIndex]?.text || "";
+                } else {
+                    val = input.value;
+                }
+            } else {
+                val = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ");
+            }
+            val = val.replace(/"/g, '""');
+            row.push('"' + val + '"');
+        }
+        csv.push(row.join(","));
+    }
+    const csvFile = new Blob(["\uFEFF" + csv.join("\n")], {type: "text/csv;charset=utf-8;"});
+    const downloadLink = document.createElement("a");
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = "none";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+// ==============================
+// 同期制御
+// ==============================
 function toggleAutoSync() {
     isAutoSync = !isAutoSync;
     const btn = document.getElementById('btn-sync-toggle');
@@ -425,6 +557,10 @@ simRef.on('value', (snapshot) => {
         if(!data.masterParts) data.masterParts = [];
         if(!data.masterUnits) data.masterUnits = [];
         if(!data.arrivals) data.arrivals = {};
+        if(!data.parents) data.parents = [];
+        if(!data.mailSettings) data.mailSettings = { emails: [], subject: "【リユースシミュレーター】データ更新のお知らせ", body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。" };
+        
+        data.parents.forEach(p => { if (typeof p.isHidden === 'undefined') p.isHidden = false; });
         
         if (isAutoSync || isLocalUpdate) {
             appData = data;
@@ -453,7 +589,7 @@ function getInitialSampleData() {
         masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
         parents: [
             {
-                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01",
+                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01", isHidden: false,
                 parts: [{
                     itemName: "AAA", locked: false,
                     units: [
@@ -463,7 +599,7 @@ function getInitialSampleData() {
                 }]
             },
             {
-                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15",
+                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15", isHidden: false,
                 parts: [{
                     itemName: "AAA", locked: false,
                     units: [
@@ -473,7 +609,12 @@ function getInitialSampleData() {
             }
         ],
         currentParentId: "p1",
-        arrivals: {}
+        arrivals: {},
+        mailSettings: {
+            emails: [""],
+            subject: "【リユースシミュレーター】データ更新のお知らせ",
+            body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。"
+        }
     };
 }
 
@@ -497,11 +638,36 @@ function renderAllViews() {
     if (isCompareMode) renderMatrixCompareView();
     else renderTable();
     renderMasterData();
+    renderMailSettings();
     renderPlanScheduleView();
 }
 
 // ==========================================
-// マスターデータロジック
+// 機種表示設定モーダル
+// ==========================================
+function openVisibilityModal() {
+    const list = document.getElementById("visibility-list");
+    list.innerHTML = "";
+    appData.parents.forEach((p, idx) => {
+        list.innerHTML += `<div style="padding:6px; border-bottom:1px solid #eee;"><label style="cursor:pointer;"><input type="checkbox" ${!p.isHidden ? 'checked' : ''} onchange="toggleParentVisibility(${idx}, this.checked)"> <strong style="color:var(--text-main); font-size:0.95rem;">${p.name}</strong></label></div>`;
+    });
+    document.getElementById("visibility-modal").style.display = "flex";
+}
+function closeVisibilityModal() {
+    document.getElementById("visibility-modal").style.display = "none";
+}
+function toggleParentVisibility(idx, isChecked) {
+    appData.parents[idx].isHidden = !isChecked;
+    
+    const visibleParents = appData.parents.filter(p => !p.isHidden);
+    if(visibleParents.length > 0 && appData.parents[idx].id === appData.currentParentId && appData.parents[idx].isHidden) {
+        appData.currentParentId = visibleParents[0].id;
+    }
+    saveDataToFirebase();
+}
+
+// ==========================================
+// マスターデータロジック & メール設定
 // ==========================================
 function renderMasterData() {
     const partsBody = document.getElementById("master-parts-tbody");
@@ -535,6 +701,28 @@ function renderMasterData() {
         `;
     });
 }
+
+function renderMailSettings() {
+    const tbody = document.getElementById("mail-list-tbody");
+    tbody.innerHTML = "";
+    if (appData.mailSettings && appData.mailSettings.emails) {
+        appData.mailSettings.emails.forEach((email, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><input type="text" value="${email}" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMailAddress(${idx}, this.value)"></td>
+                    <td><button class="btn-unit-del" onclick="deleteMailAddress(${idx})">✕</button></td>
+                </tr>
+            `;
+        });
+    }
+    
+    const subjectInput = document.getElementById("mail-subject");
+    const bodyInput = document.getElementById("mail-body");
+    
+    if (document.activeElement !== subjectInput) subjectInput.value = appData.mailSettings.subject || "";
+    if (document.activeElement !== bodyInput) bodyInput.value = appData.mailSettings.body || "";
+}
+
 function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); saveDataToFirebase(); }
 function updateMasterPart(idx, key, val) { 
     if (key === 'stock') {
@@ -545,9 +733,28 @@ function updateMasterPart(idx, key, val) {
     saveDataToFirebase(); 
 }
 function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
+
 function addMasterUnit() { appData.masterUnits.push({ name: "新規ユニット" }); saveDataToFirebase(); }
 function updateMasterUnit(idx, val) { appData.masterUnits[idx].name = val; saveDataToFirebase(); }
 function deleteMasterUnit(idx) { if(confirm("削除しますか？")) { appData.masterUnits.splice(idx, 1); saveDataToFirebase(); } }
+
+function addMailAddress() {
+    if(!appData.mailSettings.emails) appData.mailSettings.emails = [];
+    appData.mailSettings.emails.push("");
+    saveDataToFirebase();
+}
+function updateMailAddress(idx, val) {
+    appData.mailSettings.emails[idx] = val;
+    saveDataToFirebase();
+}
+function deleteMailAddress(idx) {
+    appData.mailSettings.emails.splice(idx, 1);
+    saveDataToFirebase();
+}
+function updateMailSettings(key, val) {
+    appData.mailSettings[key] = val;
+    saveDataToFirebase();
+}
 
 // ==========================================
 // 機種ボタン＆ドラッグアンドドロップ
@@ -557,7 +764,10 @@ function renderParentButtons() {
     container.innerHTML = `<span style="color:var(--text-sub); font-size:0.9rem; margin-right:4px;">■ 機種：</span>`;
     
     if (!appData.parents) return;
+    
     appData.parents.forEach((p, idx) => {
+        if(p.isHidden) return; 
+
         const btn = document.createElement("button");
         
         if (isCompareMode) {
@@ -624,7 +834,8 @@ function editCurrentParentName() {
 
 function getCurrentParent() {
     if (!appData.parents) return null;
-    return appData.parents.find(p => p.id === appData.currentParentId) || appData.parents[0];
+    const visibleParents = appData.parents.filter(p => !p.isHidden);
+    return visibleParents.find(p => p.id === appData.currentParentId) || visibleParents[0];
 }
 
 function addParent() {
@@ -638,17 +849,20 @@ function addParent() {
     const newName = prompt("新しい機種名を入力してください:");
     if (!newName || !newName.trim()) return;
     const newId = "p_" + Date.now();
-    appData.parents.push({ id: newId, name: newName.trim(), parts: [], startDate: "", endDate: "" });
+    appData.parents.push({ id: newId, name: newName.trim(), parts: [], startDate: "", endDate: "", isHidden: false });
     appData.currentParentId = newId;
     if(isCompareMode) toggleCompareMode();
     saveDataToFirebase();
 }
 
 function deleteCurrentParent() {
-    if (appData.parents.length <= 1) return alert("最低1つの機種データが必要です。");
-    if (!confirm("現在選択している機種を削除しますか？")) return;
+    const visibleParents = appData.parents.filter(p => !p.isHidden);
+    if (visibleParents.length <= 1) return alert("表示できる最低1つの機種データが必要です。");
+    if (!confirm("現在選択している機種を完全に削除しますか？")) return;
+    
     appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
-    appData.currentParentId = appData.parents[0].id;
+    const newVisible = appData.parents.filter(p => !p.isHidden);
+    appData.currentParentId = newVisible[0].id;
     saveDataToFirebase();
 }
 
@@ -670,7 +884,7 @@ function toggleCompareMode() {
         document.getElementById('compare-instructions').style.display = 'block';
         
         compareSelectedIds.clear();
-        compareSelectedIds.add(appData.currentParentId);
+        appData.parents.filter(p => !p.isHidden).forEach(p => compareSelectedIds.add(p.id));
         
         renderParentButtons();
         renderMatrixCompareView();
@@ -698,7 +912,7 @@ function renderMatrixCompareView() {
         return;
     }
 
-    const selectedParents = appData.parents.filter(p => compareSelectedIds.has(p.id));
+    const selectedParents = appData.parents.filter(p => compareSelectedIds.has(p.id) && !p.isHidden);
     const uniquePartsMap = new Map();
     
     selectedParents.forEach(p => {
@@ -716,10 +930,7 @@ function renderMatrixCompareView() {
                         models: {}
                     });
                 }
-                uniquePartsMap.get(key).models[p.id] = {
-                    insuu: unit.insuu || 1,
-                    qty: unit.qty || 0
-                };
+                uniquePartsMap.get(key).models[p.id] = { insuu: unit.insuu || 1 };
             });
         });
     });
@@ -727,8 +938,11 @@ function renderMatrixCompareView() {
     const uniqueParts = Array.from(uniquePartsMap.values());
 
     let html = `
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button class="btn btn-excel" onclick="exportTableToCSV('#compare-table', '並べて比較.csv')">📥 CSV出力</button>
+        </div>
         <div class="table-card" style="max-height:600px; overflow-y:auto;">
-            <table>
+            <table id="compare-table">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
                         <th style="border-right:1px solid rgba(255,255,255,0.2); width:15%;">品名</th>
@@ -786,11 +1000,23 @@ function renderMatrixCompareView() {
 // ==========================================
 // 📅 計画表 (入庫モーダル・カレンダー・在庫管理)
 // ==========================================
+function toggleStockOnlyView() {
+    isStockOnlyView = !isStockOnlyView;
+    const btn = document.getElementById("btn-toggle-stockview");
+    if(isStockOnlyView) {
+        btn.innerHTML = "👀 全体表示に戻す";
+        btn.className = "btn btn-compare-active";
+    } else {
+        btn.innerHTML = "👀 在庫管理表のみ表示";
+        btn.className = "btn btn-outline";
+    }
+    renderPlanScheduleView();
+}
+
 function openArrivalModal(elem) {
     currentModalDate = elem.getAttribute("data-date");
     currentModalCode = elem.getAttribute("data-code");
     
-    // 既存データの読み込み
     let arrData = (appData.arrivals && appData.arrivals[currentModalDate] && appData.arrivals[currentModalDate][currentModalCode]) || {};
     let qty = parseInt(arrData.qty) || 0;
     let color = arrData.color || "";
@@ -800,7 +1026,6 @@ function openArrivalModal(elem) {
     document.getElementById("modal-arr-target-name").innerText = `${currentModalDate} / ${partName} (${currentModalCode})`;
     document.getElementById("modal-arr-qty").value = qty ? fmtNum(qty) : "";
     
-    // 日付の初期値を今日にセット
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -864,18 +1089,26 @@ function renderModalCommentList() {
 }
 
 function saveArrivalModal() {
+    let targetDate = document.getElementById("modal-arr-date").value;
+    if (!targetDate) return alert("対象日付を選択してください");
+
     let qtyStr = document.getElementById("modal-arr-qty").value;
     let qty = parseInt(String(qtyStr).replace(/[^0-9.-]/g, '')) || 0;
     let color = document.getElementById("modal-arr-color").value;
     
-    if (!appData.arrivals) appData.arrivals = {};
-    if (!appData.arrivals[currentModalDate]) appData.arrivals[currentModalDate] = {};
+    if (targetDate !== currentModalDate) {
+        if (appData.arrivals[currentModalDate] && appData.arrivals[currentModalDate][currentModalCode]) {
+            delete appData.arrivals[currentModalDate][currentModalCode];
+        }
+    }
     
-    // データがない状態に戻す（クリア）場合は削除
+    if (!appData.arrivals) appData.arrivals = {};
+    if (!appData.arrivals[targetDate]) appData.arrivals[targetDate] = {};
+    
     if (qty === 0 && color === "" && tempComments.length === 0) {
-        delete appData.arrivals[currentModalDate][currentModalCode];
+        delete appData.arrivals[targetDate][currentModalCode];
     } else {
-        appData.arrivals[currentModalDate][currentModalCode] = { qty: qty, color: color, comments: tempComments };
+        appData.arrivals[targetDate][currentModalCode] = { qty: qty, color: color, comments: tempComments };
     }
     
     saveDataToFirebase();
@@ -899,7 +1132,7 @@ function renderPlanScheduleView() {
     let maxDate = null;
     
     appData.parents.forEach(p => {
-        if(!p.startDate || !p.endDate) return;
+        if(p.isHidden || !p.startDate || !p.endDate) return;
         
         let reuseUnits = [];
         if (p.parts) {
@@ -920,7 +1153,7 @@ function renderPlanScheduleView() {
     });
 
     if (planData.length === 0) {
-        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">リユース部品が設定されている、または使用期間（開始日・終了日）が設定されている機種がありません。</div>`;
+        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">リユース部品が設定されている、または使用期間（開始日・終了日）が設定されている表示対象の機種がありません。</div>`;
         return;
     }
 
@@ -941,33 +1174,44 @@ function renderPlanScheduleView() {
     });
 
     const youbi = ['日', '月', '火', '水', '木', '金', '土'];
-    const stockBgHdr = '#2c3e50'; // 在庫管理表側のダークヘッダー
+    const stockBgHdr = '#2c3e50'; 
 
     let html = `
         <div class="table-card" style="max-height: 700px; overflow-y: auto;">
-            <table class="plan-table">
+            <table id="plan-table" class="plan-table">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
                         <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">カレンダー</th>
     `;
-    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
+    
+    if(!isStockOnlyView) {
+        planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
+    }
     
     if(stockTrackingMap.size > 0) {
         html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">在庫管理表</th>`;
     }
     
     html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
-    planData.forEach(p => {
-        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
-    });
+    
+    if(!isStockOnlyView) {
+        planData.forEach(p => {
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
+        });
+    }
+    
     stockTrackingMap.forEach((v, code) => {
         html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
     });
     
     html += `</tr><tr><th style="min-width:110px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
-    planData.forEach(p => {
-        p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
-    });
+    
+    if(!isStockOnlyView) {
+        planData.forEach(p => {
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
+        });
+    }
+    
     stockTrackingMap.forEach((v, code) => {
         html += `
             <th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:50px;">使用</th>
@@ -1006,9 +1250,10 @@ function renderPlanScheduleView() {
                         dailyReqMap.set(u.code, currentReq + reqQty);
                     }
                 }
-                
-                if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;">${fmtNum(reqQty)}</td>`;
-                else html += `<td></td>`;
+                if(!isStockOnlyView) {
+                    if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;">${fmtNum(reqQty)}</td>`;
+                    else html += `<td></td>`;
+                }
             });
         });
 
@@ -1031,29 +1276,29 @@ function renderPlanScheduleView() {
                 window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
             }
             
-            // 使用セル (薄赤)
+            // 使用セル
             html += `<td style="border-left:2px solid #fff; text-align:center; color:#c9302c; font-weight:bold; background-color:${req>0 ? '#fde2e2' : 'transparent'};">${reqStr}</td>`;
             
-            // 入庫セル (クリックでモーダル)
+            // 入庫セル
+            let cellBgStyle = arrColor ? `background-color:${arrColor} !important;` : `background-color:transparent;`;
+            let textColor = "#1f5078";
+            if (arrColor === "#ff4d4f" || arrColor === "#1890ff" || arrColor === "#faad14" || arrColor === "#8c8c8c") {
+                textColor = "#fff";
+            }
+            
             let hasComment = arrComments.length > 0;
             let badge = hasComment ? `<div style="position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #f56c6c; border-left:8px solid transparent;"></div>` : "";
             let titleText = hasComment ? arrComments.map(c => `[${c.date}] ${c.text}`).join('&#10;') : "";
             let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
-            let textColor = "#1f5078";
-            if (arrColor === "#ff4d4f" || arrColor === "#1890ff" || arrColor === "#faad14" || arrColor === "#8c8c8c") {
-                textColor = "#fff";
-            }
-            let cellBgStyle = arrColor ? `background-color:${arrColor} !important; color:${textColor} !important;` : `background-color:transparent;`;
-            
-            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:55px; text-align:center; ${cellBgStyle}" 
+            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:55px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
                          data-date="${isoDate}" data-code="${code}" title="${titleText}"
                          onclick="openArrivalModal(this)">
                          ${badge}
                          ${displayArr}
                      </td>`;
                      
-            // 在庫セル (残庫マイナス時は赤)
+            // 在庫セル
             const stockBg = v.runningStock < 0 ? '#ff4d4f' : 'transparent';
             const stockColor = v.runningStock < 0 ? '#fff' : '#1f5078';
             
