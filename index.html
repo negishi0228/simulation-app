@@ -100,6 +100,8 @@
     .btn-outline { background-color: transparent; color: var(--primary-navy); border: 1px solid var(--primary-navy); }
     .btn-outline:hover { background-color: #eff6ff; }
     .btn-compare-active { background-color: #e6a23c; color: white; border: 1px solid #e6a23c; }
+    .btn-alert { background-color: #fff0f0; color: #f56c6c; border: 1px solid #f56c6c; }
+    .btn-alert:hover { background-color: #f56c6c; color: white; }
 
     /* ユニット操作ボタン */
     .unit-cell-flex { display: flex; align-items: center; gap: 4px; }
@@ -128,20 +130,22 @@
     .text-right { text-align: right; }
     .row-locked { background-color: #fafafa; }
 
-    /* ★ 使用区分の共通カラー設定 ★ */
+    /* 使用区分の共通カラー設定 */
     .select-use-type {
         padding: 5px 4px; border-radius: 4px; font-weight: bold; border: 1px solid var(--border-color); 
         cursor: pointer; text-align: center; font-size: 0.85rem; width: 100%; outline: none;
     }
     .type-new { background-color: #fef0f0; color: #f56c6c; border-color: #fde2e2; }
     .type-reuse { background-color: #f0f9eb; color: #67c23a; border-color: #e1f3d8; }
-    
     .badge-choice { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
 
-    /* スケジュール・比較ビュー専用 */
-    .day-sat { background-color: #f0f4ff; } 
-    .day-sun { background-color: #fff0f0; } 
-    .stock-alert { color: #f56c6c; font-weight: bold; background-color: #fff0f0; }
+    /* スケジュール表 (計画表) 専用 */
+    .plan-table { min-width: 1400px; border-collapse: collapse; }
+    .plan-table thead th { position: sticky; z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
+    .plan-table tbody td { padding: 6px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
+    .day-sat { background-color: #f0f4ff !important; } 
+    .day-sun { background-color: #fff0f0 !important; } 
+    .stock-alert { color: #f56c6c; font-weight: bold; background-color: #fff0f0 !important; }
     .matrix-model-col { background-color: #f9fbfd; }
 </style>
 </head>
@@ -196,7 +200,6 @@
             </div>
         </div>
 
-        <!-- 個別表示モード -->
         <div id="single-view">
             <div class="kpi-grid">
                 <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
@@ -240,7 +243,6 @@
             </div>
         </div>
 
-        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -248,11 +250,15 @@
          タブ2: 計画表（カレンダー＆在庫マトリクス）画面
     =========================================== -->
     <div id="view-plan" class="tab-content">
-        <h2 style="color:var(--primary-navy); margin-bottom: 10px; font-size:1.3rem;">📅 リユース部品 計画・在庫管理表</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="color:var(--primary-navy); margin:0; font-size:1.3rem;">📅 リユース部品 計画・在庫管理表</h2>
+            <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
+        </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
-            ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
-            ※「マスターリスト」で設定した初期在庫から、各機種の開始日に合わせて必要数が自動で引き落とされます。
+            ※マスターの「初期在庫数」と日々の「入庫数（手入力）」から、機種開始日に使用される数を引いて残在庫を計算します。<br>
+            ※残庫がマイナスになると赤字で表示されます。
         </p>
+        
         <div id="view-plan-content"></div>
     </div>
 
@@ -304,7 +310,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-// ★ 提供いただいた Firebase 設定情報 ★
 const firebaseConfig = {
   apiKey: "AIzaSyC45FKAEzxk1SQdkAJ4Af_zKsptMXdOin4",
   authDomain: "resim-3c978.firebaseapp.com",
@@ -318,10 +323,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ バージョンをv18に変更し、古いデータを強制リセット（クリーンな状態に） ★
-const simRef = db.ref('simulationData_v18');
+// ★ データリセット用: バージョン v19 (直近の日付に設定したデータが初期化されます)
+const simRef = db.ref('simulationData_v19');
 
-let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "" };
+let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
 let isCompareMode = false;
 let compareSelectedIds = new Set();
 let draggedParentIdx = null;
@@ -330,6 +335,9 @@ let draggedParentIdx = null;
 let isAutoSync = true;
 let isLocalUpdate = false;
 let pendingData = null;
+
+// 不足アラート用のグローバル変数
+window.currentShortages = [];
 
 // 自動同期ON/OFF 切り替え
 function toggleAutoSync() {
@@ -364,6 +372,7 @@ simRef.on('value', (snapshot) => {
     if (data) {
         if(!data.masterParts) data.masterParts = [];
         if(!data.masterUnits) data.masterUnits = [];
+        if(!data.arrivals) data.arrivals = {};
         
         if (isAutoSync || isLocalUpdate) {
             appData = data;
@@ -392,7 +401,8 @@ function getInitialSampleData() {
         masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
         parents: [
             {
-                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2029-08-01",
+                // 初期データの日付を直近に修正
+                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01",
                 parts: [{
                     itemName: "AAA", locked: false,
                     units: [
@@ -402,7 +412,7 @@ function getInitialSampleData() {
                 }]
             },
             {
-                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2029-08-01",
+                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15",
                 parts: [{
                     itemName: "AAA", locked: false,
                     units: [
@@ -411,7 +421,8 @@ function getInitialSampleData() {
                 }]
             }
         ],
-        currentParentId: "p1"
+        currentParentId: "p1",
+        arrivals: {}
     };
 }
 
@@ -485,7 +496,7 @@ function updateMasterUnit(idx, val) { appData.masterUnits[idx].name = val; saveD
 function deleteMasterUnit(idx) { if(confirm("削除しますか？")) { appData.masterUnits.splice(idx, 1); saveDataToFirebase(); } }
 
 // ==========================================
-// 機種ボタン＆ドラッグアンドドロップ
+// 機種ボタン＆ドラッグアンドドロップ、日付管理
 // ==========================================
 function renderParentButtons() {
     const container = document.getElementById("parent-button-list");
@@ -535,6 +546,7 @@ function renderParentButtons() {
         if(curr) {
             const startInput = document.getElementById('parent-start-date');
             const endInput = document.getElementById('parent-end-date');
+            // フォーカスがない場合のみ値を更新（入力中の上書きを防止）
             if(startInput && document.activeElement !== startInput) startInput.value = curr.startDate || "";
             if(endInput && document.activeElement !== endInput) endInput.value = curr.endDate || "";
         }
@@ -545,6 +557,9 @@ function updateParentDate(key, val) {
     const curr = getCurrentParent();
     if(!curr) return;
     curr[key] = val;
+    // 即座にDOMにも反映させる
+    const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
+    document.getElementById(inputId).value = val;
     saveDataToFirebase();
 }
 
@@ -716,6 +731,7 @@ function renderMatrixCompareView() {
             html += `</tr>`;
         });
 
+        // 合計行
         html += `</tbody><tfoot><tr>
                     <td colspan="6" class="text-right" style="padding-right:12px;">シミュレーション合計額:</td>`;
         selectedParents.forEach(p => {
@@ -729,10 +745,26 @@ function renderMatrixCompareView() {
 }
 
 // ==========================================
-// 📅 計画表 (カレンダー＆在庫管理マトリクス)
+// 📅 計画表 (入庫付きカレンダー・在庫管理)
 // ==========================================
+function updateArrival(dateStr, code, val) {
+    if (!appData.arrivals) appData.arrivals = {};
+    if (!appData.arrivals[dateStr]) appData.arrivals[dateStr] = {};
+    appData.arrivals[dateStr][code] = parseInt(val) || 0;
+    saveDataToFirebase();
+}
+
+function showShortageAlerts() {
+    if (window.currentShortages && window.currentShortages.length > 0) {
+        alert("【不足部品アラート】\n以下の日付で在庫が不足します：\n\n" + window.currentShortages.join("\n"));
+    } else {
+        alert("現在、不足している部品はありません。");
+    }
+}
+
 function renderPlanScheduleView() {
     const container = document.getElementById("view-plan-content");
+    window.currentShortages = []; // 不足リストを初期化
     
     let planData = [];
     let minDate = null;
@@ -775,7 +807,7 @@ function renderPlanScheduleView() {
 
     let stockTrackingMap = new Map();
     appData.masterParts.forEach(m => {
-        if (m.choice === 'reuse') {
+        if (m.choice === 'reuse' && m.code) {
             stockTrackingMap.set(m.code, { partName: m.partName, initialStock: m.stock || 0, runningStock: m.stock || 0 });
         }
     });
@@ -784,15 +816,15 @@ function renderPlanScheduleView() {
 
     let html = `
         <div class="table-card" style="max-height: 700px; overflow-y: auto;">
-            <table>
+            <table class="plan-table">
                 <thead style="position: sticky; top: 0; z-index: 10;">
                     <tr>
-                        <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">機種</th>
+                        <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">カレンダー</th>
     `;
-    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName}</th>`; });
+    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (使用数)</th>`; });
     
     if(stockTrackingMap.size > 0) {
-        html += `<th colspan="${stockTrackingMap.size * 2}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
+        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
     }
     
     html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
@@ -800,15 +832,19 @@ function renderPlanScheduleView() {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th colspan="2" style="background-color:#163c5a; border-left:2px solid #fff;">${code}</th>`;
+        html += `<th colspan="3" style="background-color:#163c5a; border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
     });
     
-    html += `</tr><tr><th style="min-width:130px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
+    html += `</tr><tr><th style="min-width:110px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
     planData.forEach(p => {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th style="background-color:#1f5078; border-left:2px solid #fff; min-width:80px;">${v.partName}</th><th style="background-color:#1f5078; color:#e6a23c; min-width:70px;">残在庫</th>`;
+        html += `
+            <th style="background-color:#1f5078; border-left:2px solid #fff; min-width:60px;">使用</th>
+            <th style="background-color:#1f5078; min-width:80px;">入庫</th>
+            <th style="background-color:#1f5078; color:#e6a23c; min-width:70px;">残庫</th>
+        `;
     });
     
     html += `</tr></thead><tbody>`;
@@ -842,19 +878,27 @@ function renderPlanScheduleView() {
                     }
                 }
                 
-                if (isStart) html += `<td style="font-weight:bold; color:var(--primary-navy);">${fmtNum(reqQty)}</td>`;
+                if (isStart) html += `<td style="font-weight:bold; color:var(--primary-navy); background-color:#eefbf1;">${fmtNum(reqQty)}</td>`;
                 else html += `<td></td>`;
             });
         });
 
         stockTrackingMap.forEach((v, code) => {
             const req = dailyReqMap.get(code) || 0;
+            const arr = (appData.arrivals && appData.arrivals[isoDate] && appData.arrivals[isoDate][code]) ? appData.arrivals[isoDate][code] : 0;
+            
+            v.runningStock += arr;
             v.runningStock -= req;
             
             const reqStr = req > 0 ? `<span style="color:#f56c6c; font-weight:bold;">-${fmtNum(req)}</span>` : '';
             const stockClass = v.runningStock < 0 ? 'stock-alert' : '';
             
-            html += `<td style="border-left:2px solid #ebeef5; text-align:center;">${reqStr}</td>`;
+            if (v.runningStock < 0 && req > 0) {
+                window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
+            }
+            
+            html += `<td style="border-left:2px solid #ebeef5; text-align:center; background-color:${req>0 ? '#fff0f0' : 'transparent'};">${reqStr}</td>`;
+            html += `<td><input type="number" class="text-center" style="width:100%; padding:4px; font-size:0.8rem; border:1px solid #dcdfe6; border-radius:3px;" value="${arr || ''}" placeholder="0" onchange="updateArrival('${isoDate}', '${code}', this.value)"></td>`;
             html += `<td class="${stockClass}" style="text-align:right; font-weight:bold; padding-right:12px;">${fmtNum(v.runningStock)}</td>`;
         });
 
@@ -983,7 +1027,7 @@ function addPartGroup() {
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
-    // ★ マスターから最初の使用区分を引いておく
+    // マスターから最初の使用区分を引いておく
     const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
     const defaultChoice = (firstMatch && firstMatch.choice) ? firstMatch.choice : "new";
     
@@ -1030,9 +1074,7 @@ function updatePartGroup(pIdx, key, val) {
         parent.parts[pIdx].units.forEach(u => { 
             u.code = ""; 
             u.partName = ""; 
-            if(firstMatch && firstMatch.choice) {
-                u.choice = firstMatch.choice; // ★ 自動セット
-            }
+            if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice; // 自動セット
         });
     }
     saveDataToFirebase();
@@ -1049,7 +1091,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.code === val);
         if(match) {
             unit.partName = match.partName;
-            unit.choice = match.choice || 'new'; // ★ 自動セット
+            unit.choice = match.choice || 'new'; // 自動セット
         } else if(val === "") {
             unit.partName = "";
         }
@@ -1057,7 +1099,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.partName === val);
         if(match) {
             unit.code = match.code;
-            unit.choice = match.choice || 'new'; // ★ 自動セット
+            unit.choice = match.choice || 'new'; // 自動セット
         } else if(val === "") {
             unit.code = "";
         }
