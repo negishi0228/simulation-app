@@ -91,11 +91,10 @@
     select, input[type="text"], input[type="number"], input[type="date"] {
         padding: 7px 6px; border: 1px solid var(--border-color); border-radius: 4px;
         font-size: 0.88rem; outline: none; background-color: #fff; width: 100%;
+        transition: border-color 0.2s;
     }
     select:disabled, input:disabled { background-color: #f5f7fa; color: #606266; cursor: not-allowed; border-color: #e4e7ed; }
-
-    /* ★ inputフォーカス時のスタイル（色合わせ） */
-    input:focus { border-color: var(--primary-navy); }
+    input:focus, select:focus { border-color: var(--primary-navy); }
 
     .btn { padding: 9px 18px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
     .btn-navy { background-color: var(--primary-navy); color: white; }
@@ -148,7 +147,7 @@
     .plan-table tbody td { padding: 6px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     .day-sat { background-color: #f0f4ff !important; } 
     .day-sun { background-color: #fff0f0 !important; } 
-    .stock-alert { color: #fff !important; font-weight: bold; background-color: #ff4d4f !important; }
+    .stock-alert { color: #f56c6c !important; font-weight: bold; background-color: #fff0f0 !important; }
     .matrix-model-col { background-color: #f9fbfd; }
 </style>
 </head>
@@ -246,6 +245,7 @@
             </div>
         </div>
 
+        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -259,7 +259,7 @@
         </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
             ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
-            ※「マスターリスト」の初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて残在庫を計算します。
+            ※「マスターリスト」の初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて在庫を計算します。
         </p>
         
         <div id="view-plan-content"></div>
@@ -326,8 +326,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v21 (きれいな状態で再スタート)
-const simRef = db.ref('simulationData_v21');
+// ★ データがリセットされないよう保存先名を固定化 ★
+const simRef = db.ref('simulationData_main');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
 let isCompareMode = false;
@@ -438,6 +438,7 @@ function switchTab(tabId) {
 function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
+// 各画面の一斉描画
 function renderAllViews() {
     renderParentButtons();
     if (isCompareMode) renderMatrixCompareView();
@@ -455,16 +456,16 @@ function renderMasterData() {
     appData.masterParts.forEach((m, idx) => {
         partsBody.innerHTML += `
             <tr>
-                <td><input type="text" value="${m.itemName}" onkeydown="if(event.key==='Enter') this.blur();" onblur="updateMasterPart(${idx}, 'itemName', this.value)"></td>
-                <td><input type="text" value="${m.code}" onkeydown="if(event.key==='Enter') this.blur();" onblur="updateMasterPart(${idx}, 'code', this.value)"></td>
-                <td><input type="text" value="${m.partName}" onkeydown="if(event.key==='Enter') this.blur();" onblur="updateMasterPart(${idx}, 'partName', this.value)"></td>
+                <td><input type="text" value="${m.itemName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'itemName', this.value)"></td>
+                <td><input type="text" value="${m.code}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'code', this.value)"></td>
+                <td><input type="text" value="${m.partName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'partName', this.value)"></td>
                 <td>
                     <select class="select-use-type ${m.choice === 'new' ? 'type-new' : 'type-reuse'}" onchange="updateMasterPart(${idx}, 'choice', this.value)">
                         <option value="new" ${m.choice === 'new' ? 'selected' : ''}>新品</option>
                         <option value="reuse" ${m.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${m.stock || 0}'" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${m.stock || 0}'; this.select();" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterPart(${idx})">✕</button></td>
             </tr>
         `;
@@ -475,7 +476,7 @@ function renderMasterData() {
     appData.masterUnits.forEach((u, idx) => {
         unitsBody.innerHTML += `
             <tr>
-                <td><input type="text" value="${u.name}" onkeydown="if(event.key==='Enter') this.blur();" onblur="updateMasterUnit(${idx}, this.value)"></td>
+                <td><input type="text" value="${u.name}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterUnit(${idx}, this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterUnit(${idx})">✕</button></td>
             </tr>
         `;
@@ -828,7 +829,7 @@ function renderPlanScheduleView() {
     planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
     
     if(stockTrackingMap.size > 0) {
-        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
+        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:var(--primary-navy); border-left:2px solid #fff;">在庫管理表</th>`;
     }
     
     html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
@@ -836,7 +837,7 @@ function renderPlanScheduleView() {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th colspan="3" style="background-color:#163c5a; border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
+        html += `<th colspan="3" style="background-color:var(--primary-navy); border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
     });
     
     html += `</tr><tr><th style="min-width:110px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
@@ -845,9 +846,9 @@ function renderPlanScheduleView() {
     });
     stockTrackingMap.forEach((v, code) => {
         html += `
-            <th style="background-color:#f56c6c; color:#fff; border-left:2px solid #fff; min-width:55px;">使用</th>
-            <th style="background-color:#67c23a; color:#fff; border-left:1px solid #fff; min-width:65px;">入庫</th>
-            <th style="background-color:#1f5078; color:#e6a23c; border-left:1px solid #fff; min-width:65px;">在庫</th>
+            <th style="background-color:var(--primary-navy); color:#f56c6c; border-left:2px solid #fff; min-width:55px;">使用</th>
+            <th style="background-color:var(--primary-navy); color:#67c23a; border-left:1px solid #fff; width:60px; min-width:60px;">入庫</th>
+            <th style="background-color:var(--primary-navy); color:#e6a23c; border-left:1px solid #fff; min-width:65px;">在庫</th>
         `;
     });
     
@@ -900,13 +901,22 @@ function renderPlanScheduleView() {
                 window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
             }
             
-            html += `<td style="border-left:2px solid #fff; text-align:center; background-color:#f56c6c; color:#fff; font-weight:bold;">${reqStr}</td>`;
-            html += `<td style="background-color:#67c23a; border-left:1px solid #fff; padding:3px;"><input type="text" class="text-center" style="width:100%; padding:2px; font-size:0.85rem; border:1px solid rgba(255,255,255,0.5); border-radius:3px; background-color:transparent; color:#fff;" value="${arr ? fmtNum(arr) : ''}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${arr || ''}'" onblur="updateArrival('${isoDate}', '${code}', this.value)"></td>`;
+            const stockClass = v.runningStock < 0 ? 'stock-alert' : '';
             
-            const stockBg = v.runningStock < 0 ? '#ff4d4f' : '#1f5078';
-            const stockColor = v.runningStock < 0 ? '#fff' : '#e6a23c';
+            // 使用セル
+            html += `<td style="border-left:2px solid #ebeef5; text-align:center; color:#f56c6c; font-weight:bold; background-color:${req>0 ? '#fff0f0' : 'transparent'};">${reqStr}</td>`;
             
-            html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;">${fmtNum(v.runningStock)}</td>`;
+            // 入庫セル（幅を狭めてカンマ対応＆フォーカス時に全選択）
+            html += `<td style="padding:2px; width:60px;">
+                        <input type="text" class="text-center" style="width:100%; padding:4px 1px; font-size:0.85rem; border:1px solid var(--border-color); border-radius:3px;" 
+                               value="${arr ? fmtNum(arr) : ''}" placeholder="0" 
+                               onkeydown="if(event.key==='Enter') this.blur();" 
+                               onfocus="this.value='${arr || ''}'; this.select();" 
+                               onblur="updateArrival('${isoDate}', '${code}', this.value)">
+                     </td>`;
+                     
+            // 在庫セル
+            html += `<td class="${stockClass}" style="text-align:right; font-weight:bold; padding-right:8px; border-left:1px solid #ebeef5;">${fmtNum(v.runningStock)}</td>`;
         });
 
         html += `</tr>`;
@@ -935,7 +945,6 @@ function renderTable() {
         return;
     }
 
-    // ★ どれか一つでも編集中なら、他の編集ボタンと追加ボタンを無効化
     const isAnyEditing = parent.parts.some(p => !p.locked);
 
     const btnAddPart = document.getElementById("btn-add-partgroup");
@@ -971,13 +980,12 @@ function renderTable() {
             if (isLocked) tr.classList.add("row-locked");
 
             if (uIdx === 0) {
-                // 排他ロック: 他の行が編集中なら、ロックされている行の編集ボタンは押せない
                 const editDisabledAttr = (isAnyEditing && isLocked) ? 'disabled style="opacity:0.4; cursor:not-allowed;" title="他の品目を編集中です"' : '';
                 
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;">
                         <div style="display:flex; flex-direction:column; gap:10px;">
-                            <select style="font-weight:bold; font-size:0.95rem;" ${isLocked ? 'disabled' : ''} onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
+                            <select style="font-weight:bold; font-size:0.95rem;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
                                 ${itemNameOptions}
                             </select>
                             ${isLocked 
@@ -1012,24 +1020,24 @@ function renderTable() {
             tr.innerHTML += `
                 <td>
                     <div class="unit-cell-flex">
-                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">${thisUnitNameOpts}</select>
+                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">${thisUnitNameOpts}</select>
                         ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
                         ${!isLocked ? `<button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕</button>` : ''}
                     </div>
                 </td>
-                <td><select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">${codeOptions}</select></td>
-                <td><select class="text-center" ${isLocked ? 'disabled' : ''} onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">${partNameOptions}</select></td>
+                <td><select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">${codeOptions}</select></td>
+                <td><select class="text-center" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">${partNameOptions}</select></td>
                 <td>
                     <select class="select-use-type ${unit.choice === 'new' ? 'type-new' : 'type-reuse'}" 
-                            ${isLocked ? 'disabled' : ''} onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
+                            ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
                         <option value="new" ${unit.choice === 'new' ? 'selected' : ''}>新品</option>
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="text" class="text-center" value="${fmtNum(unit.insuu || 1)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.insuu || 1}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'insuu', this.value)"></td>
-                <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.qty}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
-                <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.newPrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
-                <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.reusePrice}'" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.insuu || 1)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.insuu || 1}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'insuu', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.qty}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.newPrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.reusePrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(appliedPrice)}</td>
                 <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
             `;
@@ -1053,7 +1061,6 @@ function addPartGroup() {
     if (!parent) return;
     if (!parent.parts) parent.parts = [];
     
-    // 排他編集チェック
     if (parent.parts.some(p => !p.locked)) {
         alert("編集中（未確定）のパーツがあるため、追加できません。");
         return;
