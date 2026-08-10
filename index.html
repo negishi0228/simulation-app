@@ -109,8 +109,8 @@
     .btn-unit-del { background-color: #fef0f0; color: #f56c6c; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #fde2e2; flex-shrink: 0; }
 
     /* ロック / 編集ボタン */
-    .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; }
-    .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; }
+    .btn-lock { background-color: #67c23a; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; transition: 0.2s; }
+    .btn-unlock { background-color: #e6a23c; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; font-weight: bold; width: 100%; text-align: center; transition: 0.2s; }
     .btn-group-del { background-color: #f56c6c; color: white; border: none; border-radius: 3px; padding: 6px; cursor: pointer; font-size: 0.75rem; width: 100%; text-align: center; margin-top: 0; }
 
     /* KPIカード */
@@ -238,7 +238,7 @@
                 </table>
             </div>
             <div style="margin-top: 15px; text-align: right;">
-                <button class="btn btn-navy" onclick="addPartGroup()">＋ 新規パーツを追加</button>
+                <button class="btn btn-navy" id="btn-add-partgroup" onclick="addPartGroup()">＋ 新規パーツを追加</button>
                 <button class="btn btn-outline" style="margin-left: 8px;" onclick="deleteCurrentParent()">現在の機種を削除</button>
             </div>
         </div>
@@ -255,8 +255,8 @@
             <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
         </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
-            ※マスターの「初期在庫数」と日々の「入庫数（手入力）」から、機種開始日に使用される数を引いて残在庫を計算します。<br>
-            ※残庫がマイナスになると赤字で表示されます。
+            ※設定された使用期間（開始日〜終了日）に基づいてカレンダーを表示します。<br>
+            ※「マスターリスト」の初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて残在庫を計算します。
         </p>
         
         <div id="view-plan-content"></div>
@@ -323,23 +323,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v19 (直近の日付に設定したデータが初期化されます)
-const simRef = db.ref('simulationData_v19');
+// ★ データリセット用: バージョン v20
+const simRef = db.ref('simulationData_v20');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
 let isCompareMode = false;
 let compareSelectedIds = new Set();
 let draggedParentIdx = null;
 
-// 自動同期機能の変数
 let isAutoSync = true;
 let isLocalUpdate = false;
 let pendingData = null;
-
-// 不足アラート用のグローバル変数
 window.currentShortages = [];
 
-// 自動同期ON/OFF 切り替え
 function toggleAutoSync() {
     isAutoSync = !isAutoSync;
     const btn = document.getElementById('btn-sync-toggle');
@@ -366,7 +362,6 @@ function applyPendingData() {
     }
 }
 
-// リアルタイム同期リスナー
 simRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -401,7 +396,6 @@ function getInitialSampleData() {
         masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
         parents: [
             {
-                // 初期データの日付を直近に修正
                 id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01",
                 parts: [{
                     itemName: "AAA", locked: false,
@@ -441,7 +435,6 @@ function switchTab(tabId) {
 function fmtNum(v) { return (v || 0).toLocaleString(); }
 function fmtYen(v) { return "¥" + fmtNum(v); }
 
-// 各画面の一斉描画
 function renderAllViews() {
     renderParentButtons();
     if (isCompareMode) renderMatrixCompareView();
@@ -468,7 +461,7 @@ function renderMasterData() {
                         <option value="reuse" ${m.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="number" class="text-center" value="${m.stock || 0}" onchange="updateMasterPart(${idx}, 'stock', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" onfocus="this.value='${m.stock || 0}'" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterPart(${idx})">✕</button></td>
             </tr>
         `;
@@ -487,7 +480,11 @@ function renderMasterData() {
 }
 function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); saveDataToFirebase(); }
 function updateMasterPart(idx, key, val) { 
-    appData.masterParts[idx][key] = (key === 'stock') ? (parseInt(val) || 0) : val; 
+    if (key === 'stock') {
+        appData.masterParts[idx][key] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
+    } else {
+        appData.masterParts[idx][key] = val; 
+    }
     saveDataToFirebase(); 
 }
 function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
@@ -546,7 +543,6 @@ function renderParentButtons() {
         if(curr) {
             const startInput = document.getElementById('parent-start-date');
             const endInput = document.getElementById('parent-end-date');
-            // フォーカスがない場合のみ値を更新（入力中の上書きを防止）
             if(startInput && document.activeElement !== startInput) startInput.value = curr.startDate || "";
             if(endInput && document.activeElement !== endInput) endInput.value = curr.endDate || "";
         }
@@ -557,7 +553,6 @@ function updateParentDate(key, val) {
     const curr = getCurrentParent();
     if(!curr) return;
     curr[key] = val;
-    // 即座にDOMにも反映させる
     const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
     document.getElementById(inputId).value = val;
     saveDataToFirebase();
@@ -576,6 +571,13 @@ function getCurrentParent() {
 }
 
 function addParent() {
+    const parent = getCurrentParent();
+    const isAnyEditing = parent && parent.parts && parent.parts.some(p => !p.locked);
+    if (isAnyEditing) {
+        alert("編集中（未確定）のパーツがあるため、新規機種は追加できません。まずは確定してください。");
+        return;
+    }
+
     const newName = prompt("新しい機種名を入力してください:");
     if (!newName || !newName.trim()) return;
     const newId = "p_" + Date.now();
@@ -731,7 +733,6 @@ function renderMatrixCompareView() {
             html += `</tr>`;
         });
 
-        // 合計行
         html += `</tbody><tfoot><tr>
                     <td colspan="6" class="text-right" style="padding-right:12px;">シミュレーション合計額:</td>`;
         selectedParents.forEach(p => {
@@ -750,7 +751,7 @@ function renderMatrixCompareView() {
 function updateArrival(dateStr, code, val) {
     if (!appData.arrivals) appData.arrivals = {};
     if (!appData.arrivals[dateStr]) appData.arrivals[dateStr] = {};
-    appData.arrivals[dateStr][code] = parseInt(val) || 0;
+    appData.arrivals[dateStr][code] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
     saveDataToFirebase();
 }
 
@@ -764,7 +765,7 @@ function showShortageAlerts() {
 
 function renderPlanScheduleView() {
     const container = document.getElementById("view-plan-content");
-    window.currentShortages = []; // 不足リストを初期化
+    window.currentShortages = []; 
     
     let planData = [];
     let minDate = null;
@@ -807,7 +808,7 @@ function renderPlanScheduleView() {
 
     let stockTrackingMap = new Map();
     appData.masterParts.forEach(m => {
-        if (m.choice === 'reuse' && m.code) {
+        if (m.code && m.partName && m.partName.includes('リユース')) {
             stockTrackingMap.set(m.code, { partName: m.partName, initialStock: m.stock || 0, runningStock: m.stock || 0 });
         }
     });
@@ -821,7 +822,7 @@ function renderPlanScheduleView() {
                     <tr>
                         <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">カレンダー</th>
     `;
-    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (使用数)</th>`; });
+    planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
     
     if(stockTrackingMap.size > 0) {
         html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:#163c5a; border-left:2px solid #fff;">在庫管理表</th>`;
@@ -841,9 +842,9 @@ function renderPlanScheduleView() {
     });
     stockTrackingMap.forEach((v, code) => {
         html += `
-            <th style="background-color:#1f5078; border-left:2px solid #fff; min-width:60px;">使用</th>
-            <th style="background-color:#1f5078; min-width:80px;">入庫</th>
-            <th style="background-color:#1f5078; color:#e6a23c; min-width:70px;">残庫</th>
+            <th style="background-color:#f56c6c; color:#fff; border-left:2px solid #fff; min-width:60px;">使用</th>
+            <th style="background-color:#67c23a; color:#fff; border-left:1px solid #fff; min-width:80px;">入庫</th>
+            <th style="background-color:#1f5078; color:#e6a23c; border-left:1px solid #fff; min-width:70px;">在庫</th>
         `;
     });
     
@@ -878,7 +879,7 @@ function renderPlanScheduleView() {
                     }
                 }
                 
-                if (isStart) html += `<td style="font-weight:bold; color:var(--primary-navy); background-color:#eefbf1;">${fmtNum(reqQty)}</td>`;
+                if (isStart) html += `<td style="font-weight:bold; color:var(--primary-navy); background-color:#fff0f0;">${fmtNum(reqQty)}</td>`;
                 else html += `<td></td>`;
             });
         });
@@ -898,7 +899,7 @@ function renderPlanScheduleView() {
             }
             
             html += `<td style="border-left:2px solid #ebeef5; text-align:center; background-color:${req>0 ? '#fff0f0' : 'transparent'};">${reqStr}</td>`;
-            html += `<td><input type="number" class="text-center" style="width:100%; padding:4px; font-size:0.8rem; border:1px solid #dcdfe6; border-radius:3px;" value="${arr || ''}" placeholder="0" onchange="updateArrival('${isoDate}', '${code}', this.value)"></td>`;
+            html += `<td style="background-color:#f0f9eb; padding:4px;"><input type="text" class="text-center" style="width:100%; padding:4px; font-size:0.8rem; border:1px solid #a4da89; border-radius:3px;" value="${arr ? fmtNum(arr) : ''}" placeholder="0" onfocus="this.value='${arr || ''}'" onblur="updateArrival('${isoDate}', '${code}', this.value)"></td>`;
             html += `<td class="${stockClass}" style="text-align:right; font-weight:bold; padding-right:12px;">${fmtNum(v.runningStock)}</td>`;
         });
 
@@ -922,7 +923,26 @@ function renderTable() {
     if (!parent || !parent.parts || parent.parts.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
         calculateTotals();
+        
+        const btnAddPart = document.getElementById("btn-add-partgroup");
+        if(btnAddPart) { btnAddPart.disabled = false; btnAddPart.style.opacity = "1"; btnAddPart.style.cursor = "pointer"; }
         return;
+    }
+
+    // 排他編集のためのチェック（どれか一つでも編集中ならtrue）
+    const isAnyEditing = parent.parts.some(p => !p.locked);
+
+    const btnAddPart = document.getElementById("btn-add-partgroup");
+    if(btnAddPart) {
+        if(isAnyEditing) {
+            btnAddPart.disabled = true;
+            btnAddPart.style.opacity = "0.4";
+            btnAddPart.style.cursor = "not-allowed";
+        } else {
+            btnAddPart.disabled = false;
+            btnAddPart.style.opacity = "1";
+            btnAddPart.style.cursor = "pointer";
+        }
     }
 
     const uniqueItems = getUniqueItemNames();
@@ -944,7 +964,6 @@ function renderTable() {
             const tr = document.createElement("tr");
             if (isLocked) tr.classList.add("row-locked");
 
-            // 品名セル内に確定/編集/削除ボタンを集約
             if (uIdx === 0) {
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;">
@@ -953,7 +972,7 @@ function renderTable() {
                                 ${itemNameOptions}
                             </select>
                             ${isLocked 
-                                ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})">✏️ 編集</button>` 
+                                ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})" ${isAnyEditing ? 'disabled style="opacity:0.4; cursor:not-allowed;" title="他の品目を編集中です"' : ''}>✏️ 編集</button>` 
                                 : `<div style="display:flex; gap:4px;">
                                        <button class="btn-lock" style="flex:1;" onclick="toggleLock(${pIdx})">🔒 確定</button>
                                        <button class="btn-group-del" style="flex:1;" onclick="deletePartGroup(${pIdx})">削除</button>
@@ -1027,15 +1046,16 @@ function addPartGroup() {
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
     
-    // マスターから最初の使用区分を引いておく
-    const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
-    const defaultChoice = (firstMatch && firstMatch.choice) ? firstMatch.choice : "new";
-    
     parent.parts.push({
         itemName: defaultItem,
         locked: false,
-        units: [{ name: defaultUnit, code: "", partName: "", choice: defaultChoice, insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
+        units: [{ name: defaultUnit, code: "", partName: "", choice: "new", insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
     });
+    
+    const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
+    if(firstMatch && firstMatch.choice) {
+        parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
+    }
     
     saveDataToFirebase();
 }
@@ -1074,7 +1094,7 @@ function updatePartGroup(pIdx, key, val) {
         parent.parts[pIdx].units.forEach(u => { 
             u.code = ""; 
             u.partName = ""; 
-            if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice; // 自動セット
+            if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice;
         });
     }
     saveDataToFirebase();
@@ -1091,7 +1111,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.code === val);
         if(match) {
             unit.partName = match.partName;
-            unit.choice = match.choice || 'new'; // 自動セット
+            unit.choice = match.choice || 'new';
         } else if(val === "") {
             unit.partName = "";
         }
@@ -1099,7 +1119,7 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.partName === val);
         if(match) {
             unit.code = match.code;
-            unit.choice = match.choice || 'new'; // 自動セット
+            unit.choice = match.choice || 'new';
         } else if(val === "") {
             unit.code = "";
         }
