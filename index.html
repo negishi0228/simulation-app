@@ -144,9 +144,10 @@
     .badge-choice { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
 
     /* スケジュール表 (計画表) 専用 */
-    .plan-table { min-width: 1400px; border-collapse: collapse; }
-    .plan-table thead th { position: sticky; z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
-    .plan-table tbody td { padding: 6px 4px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
+    /* なるべくページに収まるようにフォントサイズとパディングを調整 */
+    .plan-table { min-width: 1000px; border-collapse: collapse; font-size: 0.82rem; }
+    .plan-table thead th { position: sticky; z-index: 10; border: 1px solid rgba(255,255,255,0.2); padding: 8px 4px; }
+    .plan-table tbody td { padding: 6px 2px; border: 1px solid #ebeef5; vertical-align: middle; text-align: center; }
     .day-sat { background-color: #f0f4ff !important; } 
     .day-sun { background-color: #fff0f0 !important; } 
     .stock-alert { color: #fff !important; font-weight: bold; background-color: #ff4d4f !important; }
@@ -173,7 +174,7 @@
             <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
             
             <div style="display:flex; align-items:center; gap:12px;">
-                <button class="btn" style="background-color: #fff; border: 1px solid #ccc; color: #d93025; padding: 6px 16px; font-size: 0.85rem;" onclick="sendMailNotification()">
+                <button class="btn" style="background-color: #fff; border: 1px solid #ccc; color: #d93025; padding: 6px 16px; font-size: 0.85rem;" onclick="openMailSelectModal()">
                     ✉️ 更新をGmailで通知
                 </button>
                 <div id="update-notification" style="display:none; background-color:#e6a23c; color:white; padding:6px 16px; border-radius:4px; font-size:0.85rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15);" onclick="applyPendingData()">
@@ -388,6 +389,21 @@
 </div>
 
 <!-- ==========================================
+     メール宛先選択モーダル
+=========================================== -->
+<div id="mail-select-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:6px; padding:20px; width:360px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">✉️ 送信先の選択</h3>
+        <p style="font-size:0.85rem; color:var(--text-sub);">通知を送りたいアドレスをチェックしてください。</p>
+        <div id="mail-select-list" style="max-height: 200px; overflow-y:auto; margin-bottom:16px; border:1px solid #eee; border-radius:4px; padding:8px;"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn btn-outline" style="padding:6px 12px;" onclick="closeMailSelectModal()">キャンセル</button>
+            <button class="btn btn-navy" style="padding:6px 12px;" onclick="executeSendMail()">Gmailを開く</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
      入庫＆コメント設定用モーダル
 =========================================== -->
 <div id="arrival-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
@@ -447,8 +463,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v25
-const simRef = db.ref('simulationData_v25');
+// ★ データリセット用: バージョン v27 (幅調整・メール選択対応)
+const simRef = db.ref('simulationData_v27');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -469,13 +485,48 @@ window.currentShortages = [];
 // ==============================
 // Gmail 送信 ＆ CSV出力機能
 // ==============================
-function sendMailNotification() {
-    if (!appData.mailSettings) {
-        alert("メール設定が見つかりません。「品番リスト設定」タブから設定してください。");
+function openMailSelectModal() {
+    if (!appData.mailSettings || !appData.mailSettings.emails || appData.mailSettings.emails.length === 0) {
+        alert("メール設定が見つかりません。「品番リスト設定」タブから送信先アドレスを登録してください。");
         return;
     }
     
-    const emails = (appData.mailSettings.emails || []).filter(e => e.trim() !== "").join(',');
+    const validEmails = appData.mailSettings.emails.filter(e => e.trim() !== "");
+    if (validEmails.length === 0) {
+        alert("有効なメールアドレスが登録されていません。");
+        return;
+    }
+    
+    const list = document.getElementById("mail-select-list");
+    list.innerHTML = "";
+    validEmails.forEach((email) => {
+        list.innerHTML += `
+            <div style="padding:6px; border-bottom:1px solid #eee;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" class="mail-target-cb" value="${email}" checked>
+                    <span style="color:var(--text-main); font-size:0.95rem;">${email}</span>
+                </label>
+            </div>
+        `;
+    });
+    
+    document.getElementById("mail-select-modal").style.display = "flex";
+}
+
+function closeMailSelectModal() {
+    document.getElementById("mail-select-modal").style.display = "none";
+}
+
+function executeSendMail() {
+    const checkboxes = document.querySelectorAll(".mail-target-cb:checked");
+    const selectedEmails = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedEmails.length === 0) {
+        alert("送信先を1つ以上選択してください。");
+        return;
+    }
+    
+    const emails = selectedEmails.join(',');
     const subject = encodeURIComponent(appData.mailSettings.subject || "【リユースシミュレーター】データ更新のお知らせ");
     
     let bodyText = appData.mailSettings.body || "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。\n\n";
@@ -485,6 +536,8 @@ function sendMailNotification() {
     // GmailをWebで開くURLスキーマ
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${emails}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
+    
+    closeMailSelectModal();
 }
 
 function exportTableToCSV(tableSelector, filename) {
@@ -497,7 +550,7 @@ function exportTableToCSV(tableSelector, filename) {
         let row = [], cols = rows[i].querySelectorAll("td, th");
         for (let j = 0; j < cols.length; j++) {
             let val = "";
-            const input = cols[j].querySelector("input, select");
+            const input = cols[j].querySelector("input[type='text'], input[type='number'], select");
             if (input) {
                 if(input.tagName === "SELECT") {
                     val = input.options[input.selectedIndex]?.text || "";
@@ -675,16 +728,16 @@ function renderMasterData() {
     appData.masterParts.forEach((m, idx) => {
         partsBody.innerHTML += `
             <tr>
-                <td><input type="text" value="${m.itemName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'itemName', this.value)"></td>
-                <td><input type="text" value="${m.code}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'code', this.value)"></td>
-                <td><input type="text" value="${m.partName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'partName', this.value)"></td>
+                <td><input type="text" value="${m.itemName}" title="${m.itemName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'itemName', this.value)"></td>
+                <td><input type="text" value="${m.code}" title="${m.code}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'code', this.value)"></td>
+                <td><input type="text" value="${m.partName}" title="${m.partName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'partName', this.value)"></td>
                 <td>
                     <select class="select-use-type ${m.choice === 'new' ? 'type-new' : 'type-reuse'}" onchange="updateMasterPart(${idx}, 'choice', this.value)">
                         <option value="new" ${m.choice === 'new' ? 'selected' : ''}>新品</option>
                         <option value="reuse" ${m.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${m.stock || 0}'; this.select();" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" title="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${m.stock || 0}'; this.select();" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterPart(${idx})">✕</button></td>
             </tr>
         `;
@@ -695,7 +748,7 @@ function renderMasterData() {
     appData.masterUnits.forEach((u, idx) => {
         unitsBody.innerHTML += `
             <tr>
-                <td><input type="text" value="${u.name}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterUnit(${idx}, this.value)"></td>
+                <td><input type="text" value="${u.name}" title="${u.name}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterUnit(${idx}, this.value)"></td>
                 <td><button class="btn-unit-del" onclick="deleteMasterUnit(${idx})">✕</button></td>
             </tr>
         `;
@@ -709,7 +762,7 @@ function renderMailSettings() {
         appData.mailSettings.emails.forEach((email, idx) => {
             tbody.innerHTML += `
                 <tr>
-                    <td><input type="text" value="${email}" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMailAddress(${idx}, this.value)"></td>
+                    <td><input type="text" value="${email}" title="${email}" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMailAddress(${idx}, this.value)"></td>
                     <td><button class="btn-unit-del" onclick="deleteMailAddress(${idx})">✕</button></td>
                 </tr>
             `;
@@ -719,8 +772,14 @@ function renderMailSettings() {
     const subjectInput = document.getElementById("mail-subject");
     const bodyInput = document.getElementById("mail-body");
     
-    if (document.activeElement !== subjectInput) subjectInput.value = appData.mailSettings.subject || "";
-    if (document.activeElement !== bodyInput) bodyInput.value = appData.mailSettings.body || "";
+    if (document.activeElement !== subjectInput) {
+        subjectInput.value = appData.mailSettings.subject || "";
+        subjectInput.title = appData.mailSettings.subject || "";
+    }
+    if (document.activeElement !== bodyInput) {
+        bodyInput.value = appData.mailSettings.body || "";
+        bodyInput.title = appData.mailSettings.body || "";
+    }
 }
 
 function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); saveDataToFirebase(); }
@@ -802,6 +861,7 @@ function renderParentButtons() {
         }
         
         btn.textContent = p.name;
+        btn.title = p.name;
         container.appendChild(btn);
     });
 
@@ -884,6 +944,7 @@ function toggleCompareMode() {
         document.getElementById('compare-instructions').style.display = 'block';
         
         compareSelectedIds.clear();
+        // 表示されている全機種を初期選択
         appData.parents.filter(p => !p.isHidden).forEach(p => compareSelectedIds.add(p.id));
         
         renderParentButtons();
@@ -953,7 +1014,7 @@ function renderMatrixCompareView() {
     `;
     
     selectedParents.forEach(p => {
-        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#163c5a;">
+        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#163c5a;" title="${p.name}">
                     ${p.name}<br><span style="font-size:0.75rem; font-weight:normal;">(員数)</span>
                  </th>`;
     });
@@ -970,10 +1031,10 @@ function renderMatrixCompareView() {
                 
             html += `
                 <tr>
-                    <td style="font-weight:bold;">${up.itemName || ''}</td>
-                    <td>${up.unitName || ''}</td>
-                    <td>${up.code || ''}</td>
-                    <td>${up.partName || ''}</td>
+                    <td style="font-weight:bold;" title="${up.itemName || ''}">${up.itemName || ''}</td>
+                    <td title="${up.unitName || ''}">${up.unitName || ''}</td>
+                    <td title="${up.code || ''}">${up.code || ''}</td>
+                    <td title="${up.partName || ''}">${up.partName || ''}</td>
                     <td>${choiceBadge}</td>
             `;
             
@@ -981,7 +1042,7 @@ function renderMatrixCompareView() {
                 const mData = up.models[p.id];
                 if (mData) {
                     html += `
-                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; font-size:1.1rem; font-weight:bold; color:var(--primary-navy);">
+                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; font-size:1.1rem; font-weight:bold; color:var(--primary-navy);" title="${fmtNum(mData.insuu)}">
                             ${fmtNum(mData.insuu)}
                         </td>
                     `;
@@ -1023,7 +1084,8 @@ function openArrivalModal(elem) {
     tempComments = arrData.comments ? JSON.parse(JSON.stringify(arrData.comments)) : [];
     let partName = elem.getAttribute("data-part") || "";
     
-    document.getElementById("modal-arr-target-name").innerText = `${currentModalDate} / ${partName} (${currentModalCode})`;
+    document.getElementById("modal-arr-target-name").innerText = `${partName} (${currentModalCode})`;
+    document.getElementById("modal-arr-date").value = currentModalDate;
     document.getElementById("modal-arr-qty").value = qty ? fmtNum(qty) : "";
     
     const today = new Date();
@@ -1185,7 +1247,7 @@ function renderPlanScheduleView() {
     `;
     
     if(!isStockOnlyView) {
-        planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
+        planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);" title="${p.parentName}">${p.parentName} (必要数)</th>`; });
     }
     
     if(stockTrackingMap.size > 0) {
@@ -1196,27 +1258,27 @@ function renderPlanScheduleView() {
     
     if(!isStockOnlyView) {
         planData.forEach(p => {
-            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);" title="${u.code || ''}">${u.code || ''}</th>`; });
         });
     }
     
     stockTrackingMap.forEach((v, code) => {
-        html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
+        html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;" title="${code} ${v.partName}">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
     });
     
-    html += `</tr><tr><th style="min-width:110px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
+    html += `</tr><tr><th style="min-width:90px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:40px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
     
     if(!isStockOnlyView) {
         planData.forEach(p => {
-            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:60px;" title="${u.partName || ''}">${u.partName || ''}</th>`; });
         });
     }
     
     stockTrackingMap.forEach((v, code) => {
         html += `
-            <th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:50px;">使用</th>
-            <th style="background-color:${stockBgHdr}; color:#67c23a; border-left:1px solid rgba(255,255,255,0.2); width:55px; min-width:55px;">入庫</th>
-            <th style="background-color:${stockBgHdr}; color:#e6a23c; border-left:1px solid rgba(255,255,255,0.2); min-width:60px;">在庫</th>
+            <th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:45px;">使用</th>
+            <th style="background-color:${stockBgHdr}; color:#67c23a; border-left:1px solid rgba(255,255,255,0.2); width:50px; min-width:50px;">入庫</th>
+            <th style="background-color:${stockBgHdr}; color:#e6a23c; border-left:1px solid rgba(255,255,255,0.2); min-width:50px;">在庫</th>
         `;
     });
     
@@ -1224,12 +1286,13 @@ function renderPlanScheduleView() {
             
     dateList.forEach(d => {
         const yyyy = d.getFullYear();
-        const mm = d.getMonth() + 1;
-        const dd = d.getDate();
-        const dateStr = `${yyyy}年${mm}月${dd}日`;
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        // 日付をコンパクトに (yyyy/mm/dd)
+        const dateStr = `${yyyy}/${mm}/${dd}`;
         const yIdx = d.getDay();
         const yStr = youbi[yIdx];
-        const isoDate = `${yyyy}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+        const isoDate = `${yyyy}-${mm}-${dd}`;
         
         let rowClass = (yIdx === 0) ? 'day-sun' : (yIdx === 6) ? 'day-sat' : '';
         
@@ -1251,7 +1314,7 @@ function renderPlanScheduleView() {
                     }
                 }
                 if(!isStockOnlyView) {
-                    if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;">${fmtNum(reqQty)}</td>`;
+                    if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;" title="${fmtNum(reqQty)}">${fmtNum(reqQty)}</td>`;
                     else html += `<td></td>`;
                 }
             });
@@ -1277,7 +1340,7 @@ function renderPlanScheduleView() {
             }
             
             // 使用セル
-            html += `<td style="border-left:2px solid #fff; text-align:center; color:#c9302c; font-weight:bold; background-color:${req>0 ? '#fde2e2' : 'transparent'};">${reqStr}</td>`;
+            html += `<td style="border-left:2px solid #fff; text-align:center; color:#c9302c; font-weight:bold; background-color:${req>0 ? '#fde2e2' : 'transparent'};" title="${reqStr}">${reqStr}</td>`;
             
             // 入庫セル
             let cellBgStyle = arrColor ? `background-color:${arrColor} !important;` : `background-color:transparent;`;
@@ -1288,10 +1351,10 @@ function renderPlanScheduleView() {
             
             let hasComment = arrComments.length > 0;
             let badge = hasComment ? `<div style="position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #f56c6c; border-left:8px solid transparent;"></div>` : "";
-            let titleText = hasComment ? arrComments.map(c => `[${c.date}] ${c.text}`).join('&#10;') : "";
+            let titleText = hasComment ? arrComments.map(c => `[${c.date}] ${c.text}`).join('\n') : "";
             let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
-            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:55px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
+            html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:50px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
                          data-date="${isoDate}" data-code="${code}" title="${titleText}"
                          onclick="openArrivalModal(this)">
                          ${badge}
@@ -1302,7 +1365,7 @@ function renderPlanScheduleView() {
             const stockBg = v.runningStock < 0 ? '#ff4d4f' : 'transparent';
             const stockColor = v.runningStock < 0 ? '#fff' : '#1f5078';
             
-            html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;">${fmtNum(v.runningStock)}</td>`;
+            html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;" title="${fmtNum(v.runningStock)}">${fmtNum(v.runningStock)}</td>`;
         });
 
         html += `</tr>`;
@@ -1369,9 +1432,9 @@ function renderTable() {
                 const editDisabledAttr = (isAnyEditing && isLocked) ? 'disabled style="opacity:0.4; cursor:not-allowed;" title="他の品目を編集中です"' : '';
                 
                 tr.innerHTML += `
-                    <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;">
+                    <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;" title="${part.itemName || ''}">
                         <div style="display:flex; flex-direction:column; gap:10px;">
-                            <select style="font-weight:bold; font-size:0.95rem;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updatePartGroup(${pIdx}, 'itemName', this.value)">
+                            <select style="font-weight:bold; font-size:0.95rem;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updatePartGroup(${pIdx}, 'itemName', this.value)" title="${part.itemName || ''}">
                                 ${itemNameOptions}
                             </select>
                             ${isLocked 
@@ -1406,13 +1469,13 @@ function renderTable() {
             tr.innerHTML += `
                 <td>
                     <div class="unit-cell-flex">
-                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)">${thisUnitNameOpts}</select>
+                        <select style="flex:1;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateUnit(${pIdx}, ${uIdx}, 'name', this.value)" title="${unit.name || ''}">${thisUnitNameOpts}</select>
                         ${(!isLocked && uIdx === 0) ? `<button class="btn-unit-add" onclick="addUnitRow(${pIdx})" title="ユニット追加">＋</button>` : ''}
                         ${!isLocked ? `<button class="btn-unit-del" onclick="deleteUnitRow(${pIdx}, ${uIdx})" title="このユニットを削除">✕</button>` : ''}
                     </div>
                 </td>
-                <td><select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)">${codeOptions}</select></td>
-                <td><select class="text-center" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)">${partNameOptions}</select></td>
+                <td><select class="text-center" style="letter-spacing:0.03em;" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'code', this.value)" title="${unit.code || ''}">${codeOptions}</select></td>
+                <td><select class="text-center" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateLinkedPart(${pIdx}, ${uIdx}, 'partName', this.value)" title="${unit.partName || ''}">${partNameOptions}</select></td>
                 <td>
                     <select class="select-use-type ${unit.choice === 'new' ? 'type-new' : 'type-reuse'}" 
                             ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onchange="updateUnit(${pIdx}, ${uIdx}, 'choice', this.value)">
@@ -1420,12 +1483,12 @@ function renderTable() {
                         <option value="reuse" ${unit.choice === 'reuse' ? 'selected' : ''}>リユース</option>
                     </select>
                 </td>
-                <td><input type="text" class="text-center" value="${fmtNum(unit.insuu || 1)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.insuu || 1}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'insuu', this.value)"></td>
-                <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.qty}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
-                <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.newPrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
-                <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.reusePrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
-                <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(appliedPrice)}</td>
-                <td style="font-weight:bold; font-size: 0.95rem;">${fmtYen(subTotal)}</td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.insuu || 1)}" title="${fmtNum(unit.insuu || 1)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.insuu || 1}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'insuu', this.value)"></td>
+                <td><input type="text" class="text-center" value="${fmtNum(unit.qty)}" title="${fmtNum(unit.qty)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.qty}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'qty', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.newPrice)}" title="${fmtYen(unit.newPrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.newPrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'newPrice', this.value)"></td>
+                <td><input type="text" class="text-right" value="${fmtYen(unit.reusePrice)}" title="${fmtYen(unit.reusePrice)}" ${isLocked ? 'disabled' : ''} onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${unit.reusePrice}'; this.select();" onblur="updateUnit(${pIdx}, ${uIdx}, 'reusePrice', this.value)"></td>
+                <td style="font-weight:bold; font-size: 0.95rem;" title="${fmtYen(appliedPrice)}">${fmtYen(appliedPrice)}</td>
+                <td style="font-weight:bold; font-size: 0.95rem;" title="${fmtYen(subTotal)}">${fmtYen(subTotal)}</td>
             `;
 
             tbody.appendChild(tr);
