@@ -151,7 +151,7 @@
     .matrix-model-col { background-color: #f9fbfd; }
     
     /* モーダル用カラーピッカー */
-    .color-picker { width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+    .color-picker { width: 26px; height: 26px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
 </style>
 </head>
 <body>
@@ -260,8 +260,8 @@
             <button class="btn btn-alert" onclick="showShortageAlerts()">⚠️ 不足部品と日付を確認</button>
         </div>
         <p style="color:var(--text-sub); font-size:0.9rem; margin-bottom: 20px;">
-            ※入庫セルをクリックすると、「入庫数・色・コメント」を編集できます。<br>
-            ※マスターの初期在庫と入庫数から、機種開始日の必要数を引いて在庫を計算します。
+            ※入庫セルをクリックすると、「日付・入庫数・色・コメント」を入力できます。<br>
+            ※マスターの初期在庫と日々の「入庫数」から、機種開始日の必要数を引いて残庫を計算します。
         </p>
         
         <div id="view-plan-content"></div>
@@ -314,20 +314,23 @@
      入庫設定用モーダル
 =========================================== -->
 <div id="arrival-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:6px; padding:20px; width:320px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+    <div style="background:#fff; border-radius:6px; padding:20px; width:340px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">入庫の設定</h3>
-        <p id="modal-arr-target" style="font-size:0.85rem; color:var(--primary-navy); font-weight:bold; margin-bottom:15px;"></p>
+        <p id="modal-arr-target-name" style="font-size:0.85rem; color:var(--primary-navy); font-weight:bold; margin-bottom:15px;"></p>
+        
+        <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">対象日付</label>
+        <input type="date" id="modal-arr-date" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; outline:none;">
         
         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">入庫数</label>
-        <input type="text" id="modal-arr-qty" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; font-size:1rem; text-align:right;" onfocus="this.select();" onkeydown="if(event.key==='Enter') saveArrivalModal();">
+        <input type="text" id="modal-arr-qty" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:16px; font-size:1rem; text-align:right; outline:none;" onfocus="this.select();" onkeydown="if(event.key==='Enter') saveArrivalModal();">
         
         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">セルの色付け</label>
         <div style="display:flex; gap:10px; margin-bottom:16px;">
-            <div class="color-picker" data-color="" style="background-color:#e1f3d8;" onclick="selectModalColor('')" title="デフォルト(薄緑)"></div>
-            <div class="color-picker" data-color="#fde2e2" style="background-color:#fde2e2;" onclick="selectModalColor('#fde2e2')" title="赤(注意)"></div>
-            <div class="color-picker" data-color="#faecd8" style="background-color:#faecd8;" onclick="selectModalColor('#faecd8')" title="黄(保留)"></div>
-            <div class="color-picker" data-color="#d9ecff" style="background-color:#d9ecff;" onclick="selectModalColor('#d9ecff')" title="青(完了)"></div>
-            <div class="color-picker" data-color="#e9e9eb" style="background-color:#e9e9eb;" onclick="selectModalColor('#e9e9eb')" title="グレー(無効)"></div>
+            <div class="color-picker" data-color="#ffffff" style="background-color:#ffffff; border: 1px solid #ccc;" onclick="selectModalColor('#ffffff')" title="元に戻す(白)"></div>
+            <div class="color-picker" data-color="#fde2e2" style="background-color:#fde2e2;" onclick="selectModalColor('#fde2e2')" title="ピンク"></div>
+            <div class="color-picker" data-color="#d9ecff" style="background-color:#d9ecff;" onclick="selectModalColor('#d9ecff')" title="青色"></div>
+            <div class="color-picker" data-color="#faecd8" style="background-color:#faecd8;" onclick="selectModalColor('#faecd8')" title="黄色"></div>
+            <div class="color-picker" data-color="#e9e9eb" style="background-color:#e9e9eb;" onclick="selectModalColor('#e9e9eb')" title="灰色"></div>
         </div>
         <input type="hidden" id="modal-arr-color">
         
@@ -359,8 +362,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v22 (色付け・コメント・背景色対応)
-const simRef = db.ref('simulationData_v22');
+// ★ データリセット用: バージョン v23
+const simRef = db.ref('simulationData_v23');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {} };
 let isCompareMode = false;
@@ -370,6 +373,10 @@ let draggedParentIdx = null;
 let isAutoSync = true;
 let isLocalUpdate = false;
 let pendingData = null;
+
+let currentModalDate = "";
+let currentModalCode = "";
+
 window.currentShortages = [];
 
 function toggleAutoSync() {
@@ -769,7 +776,6 @@ function renderMatrixCompareView() {
             html += `</tr>`;
         });
 
-        // 合計行
         html += `</tbody><tfoot><tr>
                     <td colspan="6" class="text-right" style="padding-right:12px;">シミュレーション合計額:</td>`;
         selectedParents.forEach(p => {
@@ -783,48 +789,63 @@ function renderMatrixCompareView() {
 }
 
 // ==========================================
-// 📅 計画表 (入庫モーダル・カレンダー・在庫管理)
+// 📅 計画表 (入庫付きカレンダー・在庫管理)
 // ==========================================
-let currentModalDate = "";
-let currentModalCode = "";
-
 function openArrivalModal(elem) {
     currentModalDate = elem.getAttribute("data-date");
     currentModalCode = elem.getAttribute("data-code");
     let qty = parseInt(elem.getAttribute("data-qty")) || 0;
-    let color = elem.getAttribute("data-color") || "";
+    let color = elem.getAttribute("data-color") || "#ffffff";
     let comment = elem.getAttribute("data-comment") || "";
     let partName = elem.getAttribute("data-part") || "";
     
-    document.getElementById("modal-arr-target").innerText = `${currentModalDate} / ${partName} (${currentModalCode})`;
+    document.getElementById("modal-arr-target-name").innerText = `${partName} (${currentModalCode})`;
+    document.getElementById("modal-arr-date").value = currentModalDate;
     document.getElementById("modal-arr-qty").value = qty ? fmtNum(qty) : "";
     document.getElementById("modal-arr-comment").value = comment;
-    selectModalColor(color || "");
+    selectModalColor(color);
     
     document.getElementById("arrival-modal").style.display = "flex";
-    setTimeout(() => { document.getElementById("modal-arr-qty").focus(); }, 100);
+    setTimeout(() => { 
+        document.getElementById("modal-arr-qty").focus(); 
+        document.getElementById("modal-arr-qty").select();
+    }, 100);
 }
 
 function closeArrivalModal() { document.getElementById("arrival-modal").style.display = "none"; }
 
 function selectModalColor(color) {
+    if (!color) color = "#ffffff";
     document.getElementById("modal-arr-color").value = color;
     document.querySelectorAll(".color-picker").forEach(el => {
-        if(el.getAttribute("data-color") === color) el.style.borderColor = "var(--text-main)";
-        else el.style.borderColor = "transparent";
+        if(el.getAttribute("data-color") === color) {
+            el.style.borderColor = "var(--text-main)";
+        } else {
+            el.style.borderColor = (el.getAttribute("data-color") === "#ffffff") ? "#ccc" : "transparent";
+        }
     });
 }
 
 function saveArrivalModal() {
+    let targetDate = document.getElementById("modal-arr-date").value;
+    if (!targetDate) return alert("対象日付を選択してください");
+
     let qtyStr = document.getElementById("modal-arr-qty").value;
     let qty = parseInt(String(qtyStr).replace(/[^0-9.-]/g, '')) || 0;
     let color = document.getElementById("modal-arr-color").value;
     let comment = document.getElementById("modal-arr-comment").value.trim();
     
-    if (!appData.arrivals) appData.arrivals = {};
-    if (!appData.arrivals[currentModalDate]) appData.arrivals[currentModalDate] = {};
+    // 日付が変更された場合は、元の日付のデータを削除する
+    if (targetDate !== currentModalDate) {
+        if (appData.arrivals[currentModalDate] && appData.arrivals[currentModalDate][currentModalCode]) {
+            delete appData.arrivals[currentModalDate][currentModalCode];
+        }
+    }
     
-    appData.arrivals[currentModalDate][currentModalCode] = { qty: qty, color: color, comment: comment };
+    if (!appData.arrivals) appData.arrivals = {};
+    if (!appData.arrivals[targetDate]) appData.arrivals[targetDate] = {};
+    
+    appData.arrivals[targetDate][currentModalCode] = { qty: qty, color: color, comment: comment };
     saveDataToFirebase();
     closeArrivalModal();
 }
@@ -888,6 +909,7 @@ function renderPlanScheduleView() {
     });
 
     const youbi = ['日', '月', '火', '水', '木', '金', '土'];
+    const stockBgHdr = '#404a59'; // 在庫管理表用のダークヘッダー
 
     let html = `
         <div class="table-card" style="max-height: 700px; overflow-y: auto;">
@@ -899,7 +921,7 @@ function renderPlanScheduleView() {
     planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);">${p.parentName} (必要数)</th>`; });
     
     if(stockTrackingMap.size > 0) {
-        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:var(--primary-navy); border-left:2px solid #fff;">在庫管理表</th>`;
+        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">在庫管理表</th>`;
     }
     
     html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
@@ -907,7 +929,7 @@ function renderPlanScheduleView() {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);">${u.code || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        html += `<th colspan="3" style="background-color:var(--primary-navy); border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
+        html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
     });
     
     html += `</tr><tr><th style="min-width:110px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:50px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
@@ -915,11 +937,10 @@ function renderPlanScheduleView() {
         p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:80px;">${u.partName || ''}</th>`; });
     });
     stockTrackingMap.forEach((v, code) => {
-        // ヘッダー背景色はネイビー統一、文字色で区別
         html += `
-            <th style="background-color:var(--primary-navy); color:#f56c6c; border-left:2px solid #fff; min-width:55px;">使用</th>
-            <th style="background-color:var(--primary-navy); color:#67c23a; border-left:1px solid #fff; width:60px; min-width:60px;">入庫</th>
-            <th style="background-color:var(--primary-navy); color:#e6a23c; border-left:1px solid #fff; min-width:65px;">在庫</th>
+            <th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:55px;">使用</th>
+            <th style="background-color:${stockBgHdr}; color:#67c23a; border-left:1px solid #fff; width:60px; min-width:60px;">入庫</th>
+            <th style="background-color:${stockBgHdr}; color:#e6a23c; border-left:1px solid #fff; min-width:65px;">在庫</th>
         `;
     });
     
@@ -962,15 +983,15 @@ function renderPlanScheduleView() {
         stockTrackingMap.forEach((v, code) => {
             const req = dailyReqMap.get(code) || 0;
             
-            // 入庫データのパース
             let arrVal = appData.arrivals && appData.arrivals[isoDate] && appData.arrivals[isoDate][code];
             let arrQty = 0, arrColor = "", arrComment = "";
             if (typeof arrVal === 'object') {
                 arrQty = parseInt(arrVal.qty) || 0;
-                arrColor = arrVal.color || "";
+                arrColor = arrVal.color || "#ffffff";
                 arrComment = arrVal.comment || "";
             } else if (arrVal) {
                 arrQty = parseInt(arrVal) || 0;
+                arrColor = "#ffffff";
             }
             
             v.runningStock += arrQty;
@@ -982,22 +1003,22 @@ function renderPlanScheduleView() {
             }
             
             // 使用セル (薄赤)
-            html += `<td style="border-left:2px solid #fff; text-align:center; background-color:${req>0 ? '#fde2e2' : '#fff5f5'}; color:#c9302c; font-weight:bold;">${reqStr}</td>`;
+            html += `<td style="border-left:2px solid #fff; text-align:center; background-color:${req>0 ? '#fde2e2' : '#f9f5f5'}; color:#c9302c; font-weight:bold;">${reqStr}</td>`;
             
-            // 入庫セル (薄緑ベース + モーダル起動)
-            let cellBg = arrColor ? arrColor : '#e1f3d8';
+            // 入庫セル (白ベース、指定色 + モーダル起動)
+            let cellBg = arrColor === '#ffffff' ? '#ffffff' : arrColor;
             let badge = arrComment ? `<div style="position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #f56c6c; border-left:8px solid transparent;" title="${arrComment.replace(/"/g, '&quot;')}"></div>` : "";
             let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
-            html += `<td style="background-color:${cellBg}; border-left:1px solid #fff; position:relative; cursor:pointer; font-weight:bold; color:#2b542c; width:60px;" 
+            html += `<td style="background-color:${cellBg}; border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; color:var(--text-main); width:60px; text-align:center;" 
                          data-date="${isoDate}" data-code="${code}" data-qty="${arrQty}" data-color="${arrColor}" data-comment="${arrComment.replace(/"/g, '&quot;')}" data-part="${v.partName}"
                          onclick="openArrivalModal(this)">
                          ${badge}
                          ${displayArr}
                      </td>`;
                      
-            // 在庫セル (グレーネイビー / マイナス時は赤)
-            const stockBg = v.runningStock < 0 ? '#ff4d4f' : '#d3e0ea';
+            // 在庫セル (残庫マイナス時は赤)
+            const stockBg = v.runningStock < 0 ? '#ff4d4f' : '#f0f4f8';
             const stockColor = v.runningStock < 0 ? '#fff' : '#1f5078';
             
             html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;">${fmtNum(v.runningStock)}</td>`;
