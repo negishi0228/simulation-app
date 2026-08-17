@@ -173,8 +173,8 @@
     /* ★ チュートリアル用のスタイル（自作・クリック貫通） ★ */
     #tut-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.5); z-index: 9000;
-        pointer-events: none; /* 画面全体のクリックを邪魔しない */
+        background: rgba(0, 0, 0, 0.4); z-index: 9000;
+        pointer-events: none; /* クリック貫通 */
         transition: all 0.3s;
     }
     .tut-highlight {
@@ -187,7 +187,7 @@
         display: none; position: absolute; background: #fff; border-radius: 8px; padding: 20px;
         width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 9002;
         border-left: 4px solid var(--primary-navy);
-        pointer-events: auto; /* ダイアログのボタンは押せるようにする */
+        pointer-events: auto;
         transition: all 0.3s ease-out;
     }
 </style>
@@ -198,7 +198,7 @@
     <!-- 最上段タイトルとタブナビゲーション、同期トグルボタン -->
     <div class="app-header">
         <div class="header-top-row">
-            <h1 class="app-title">📊 機種別リユースシミュレーター【v33】</h1>
+            <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
             
             <div style="display:flex; align-items:center; gap:8px;">
                 <button id="btn-tutorial" class="btn btn-navy" style="padding: 6px 12px; font-size: 0.85rem; background-color:#e6a23c; border-color:#e6a23c;" onclick="startTutorial()">
@@ -404,13 +404,14 @@
 </div>
 
 <!-- ==========================================
-     マニュアル表示用モーダル
+     各種モーダル群（重複削除済み）
 =========================================== -->
+
+<!-- マニュアルモーダル -->
 <div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:24px; width:700px; max-height:85vh; overflow-y:auto; box-shadow:0 4px 15px rgba(0,0,0,0.3); position:relative;">
         <button style="position:absolute; top:15px; right:15px; background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:#999;" onclick="closeManualModal()">✕</button>
         <h2 style="margin-top:0; color:var(--primary-navy); border-bottom:3px solid var(--border-color); padding-bottom:10px;">📖 アプリ運用マニュアル</h2>
-        
         <div class="manual-section">
             <h4>🎯 このアプリの目的</h4>
             <p style="font-size:0.9rem; line-height:1.6; color:var(--text-sub);">
@@ -418,7 +419,6 @@
                 また、リユース設定した部品の必要数をカレンダーに展開し、<b>在庫不足が起きないよう入庫予定を管理</b>することが目的です。
             </p>
         </div>
-
         <div class="manual-section">
             <h4>⚙️ 1. 品番リスト設定（マスター設定）</h4>
             <ul>
@@ -426,49 +426,36 @@
                 <li>ここで「使用区分（新品/リユース）」と「初期在庫数」を設定しておくことで、シミュレーターや計画表に自動連携されます。</li>
             </ul>
         </div>
-
         <div class="manual-section">
             <h4>📊 2. シミュレーター画面</h4>
             <ul>
-                <li><b>機種の登録：</b>「＋ 新規機種登録」から対象の機種を作成し、使用期間（開始日〜終了日）を設定します。</li>
-                <li><b>部品の追加：</b>その機種で使う部品を追加し、「新品」か「リユース」かを選択します。（マスターの情報が自動入力されます）</li>
-                <li><b>コスト確認：</b>リユース品を活用した場合の「削減金額」と「削減率」が上部のカードにリアルタイムで表示されます。</li>
-                <li><b>確定とロック：</b>入力が終わったら「🔒 確定」ボタンを押すと、誤操作で書き換わるのを防げます。</li>
+                <li><b>機種の登録：</b>「＋ 新規機種登録」から対象の機種を作成し、使用期間を設定します。</li>
+                <li><b>部品の追加：</b>その機種で使う部品を追加し、「新品」か「リユース」かを選択します。</li>
+                <li><b>コスト確認：</b>リユース品を活用した場合の「削減金額」と「削減率」が上部のカードにリアルタイム表示されます。</li>
             </ul>
         </div>
-
         <div class="manual-section">
             <h4>📅 3. 計画表（在庫管理表）画面</h4>
             <ul>
-                <li>シミュレーターで「リユース」に設定した部品の必要数が、機種の開始日（カレンダー）に自動で表示されます。</li>
+                <li>シミュレーターで「リユース」に設定した部品の必要数がカレンダーに自動展開されます。</li>
                 <li><b>入庫の入力：</b>「入庫」のセルをクリックすると、入庫予定数やコメント、セルの色付けが行えます。</li>
-                <li><b>在庫の確認：</b>「初期在庫＋入庫数－使用数」が自動計算され、不足（マイナス）になるとセルが赤字で警告されます。</li>
             </ul>
         </div>
-
-        <div style="text-align:center; margin-top:20px;">
-            <button class="btn btn-navy" onclick="closeManualModal()">閉じる</button>
-        </div>
+        <div style="text-align:center; margin-top:20px;"><button class="btn btn-navy" onclick="closeManualModal()">閉じる</button></div>
     </div>
 </div>
 
-<!-- ==========================================
-     機種表示設定モーダル
-=========================================== -->
+<!-- 表示設定モーダル -->
 <div id="visibility-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:340px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">👁️ 機種の表示設定</h3>
         <p style="font-size:0.85rem; color:var(--text-sub);">チェックを外した機種は非表示になります。</p>
         <div id="visibility-list" style="max-height: 300px; overflow-y:auto; margin-bottom:16px;"></div>
-        <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-navy" style="padding:6px 16px;" onclick="closeVisibilityModal()">完了</button>
-        </div>
+        <div style="display:flex; justify-content:flex-end;"><button class="btn btn-navy" style="padding:6px 16px;" onclick="closeVisibilityModal()">完了</button></div>
     </div>
 </div>
 
-<!-- ==========================================
-     メール宛先選択モーダル
-=========================================== -->
+<!-- メール送信先選択モーダル -->
 <div id="mail-select-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:360px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">✉️ 送信先の選択</h3>
@@ -481,9 +468,7 @@
     </div>
 </div>
 
-<!-- ==========================================
-     入庫＆コメント設定用モーダル
-=========================================== -->
+<!-- 入庫＆コメントモーダル -->
 <div id="arrival-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:380px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">入庫・コメント設定</h3>
@@ -512,9 +497,7 @@
             <button class="btn btn-navy" style="padding:6px 10px;" onclick="addTempComment()">追加</button>
         </div>
         
-        <div id="modal-comment-list" style="max-height:120px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:8px; background:#f9f9f9; margin-bottom:20px; font-size:0.85rem;">
-            <!-- JSでコメント履歴を描画 -->
-        </div>
+        <div id="modal-comment-list" style="max-height:120px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:8px; background:#f9f9f9; margin-bottom:20px; font-size:0.85rem;"></div>
         
         <div style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-outline" style="padding:8px 16px;" onclick="closeArrivalModal()">キャンセル</button>
@@ -523,9 +506,7 @@
     </div>
 </div>
 
-<!-- ==========================================
-     チュートリアル用 (完全自作・クリック貫通)
-=========================================== -->
+<!-- ★自作チュートリアル用ダイアログ★ -->
 <div id="tut-overlay"></div>
 <div id="tut-dialog">
     <h3 id="tut-title" style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:8px;"></h3>
@@ -538,7 +519,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -555,11 +535,11 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v33
-const simRef = db.ref('simulationData_v33');
+// ★ データリセット用: バージョン v34
+const simRef = db.ref('simulationData_v34');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -590,23 +570,23 @@ window.currentShortages = [];
 // 🎮 チュートリアル機能 (完全自作)
 // ==============================
 const tutSteps = [
-    { target: ".app-title", title: "ようこそ！", text: "機種別リユースシミュレーターへようこそ。<br>実際に画面を触りながら、基本的な使い方をご案内します。<br><br><b>確認したら「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#tab-btn-master", title: "1. マスター設定", text: "まずは部品マスターを登録します。<br>上の「品番リスト設定」タブを<b>クリック</b>して切り替えてください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "master" },
-    { target: "#btn-add-master-part", title: "部品の追加", text: "「＋ 品番を追加」ボタンを<b>クリック</b>してください。<br><br><b>追加できたら「次へ」を押してください。</b>", tab: "master" },
-    { target: "#master-parts-area", title: "部品の登録と区分", text: "部品名や「初期在庫数」を入力し、区分を「リユース」に変更してみてください。<b>終わったら「次へ」を押してください。</b>", tab: "master" },
-    { target: "#tab-btn-sim", title: "2. シミュレーション", text: "部品の登録が終わったら、「シミュレーター」タブへ移動します。タブを<b>クリック</b>してください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#btn-add-partgroup", title: "パーツの追加", text: "対象機種で使う部品を追加します。「＋ 新規パーツを追加」を<b>クリック</b>してください。<br><br><b>追加できたら「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#sim-table-area", title: "自動連携", text: "「品名」を選ぶとマスターの区分が自動反映されます。「リユース単価」などを入力してみましょう。<br><b>終わったら「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#sim-kpi", title: "削減効果の確認", text: "リユース活用によるコスト削減額と削減率が、ここにリアルタイムで計算・表示されます！<br><br><b>確認したら「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#tab-btn-plan", title: "3. 在庫管理（計画表）", text: "最後に「📅 計画表」タブを<b>クリック</b>してください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "plan" },
-    { target: "#view-plan-content", title: "入庫の入力", text: "シミュレーションで「リユース」とした部品の必要数が自動で展開されます。<br>「入庫セル（緑の列）」をクリックして入庫数を入力してみましょう。<br><b>終わったら「次へ」を押してください。</b>", tab: "plan" },
-    { target: ".app-title", title: "チュートリアル完了🎉", text: "基本的な流れは以上です！完了ボタンを押すと、これまでの入力データが自動的に【元の本番データ】にリセットされます。<br><br>より詳しい説明は「📖 マニュアル」からいつでも確認できます。", tab: "plan" }
+    { target: ".app-title", title: "ようこそ！", text: "チュートリアルを開始します。<br>実際に操作しながら使い方を学びましょう。<br><b>「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#tab-btn-master", title: "1. マスター設定", text: "まずは部品マスターを登録します。<br>上の「品番リスト設定」タブを<b>クリック</b>して切り替えてください。", tab: "sim" },
+    { target: "#btn-add-master-part", title: "部品の追加", text: "「＋ 品番を追加」ボタンを<b>クリック</b>してください。", tab: "master" },
+    { target: "#master-parts-area", title: "部品の登録", text: "追加された行の区分を「リユース」に変更してみてください。<br>終わったら<b>「次へ」を押してください。</b>", tab: "master" },
+    { target: "#tab-btn-sim", title: "2. シミュレーション", text: "「シミュレーター」タブを<b>クリック</b>してください。", tab: "master" },
+    { target: "#btn-add-partgroup", title: "パーツの追加", text: "「＋ 新規パーツを追加」を<b>クリック</b>してください。", tab: "sim" },
+    { target: "#sim-table-area", title: "自動連携", text: "品名のプルダウンを開き、先ほどマスターで作成した部品を選んでみてください。<br>マスターの区分が自動反映されます。<br>終わったら<b>「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#sim-kpi", title: "削減効果の確認", text: "リユース活用によるコスト削減額がここに表示されます。<br><b>「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#tab-btn-plan", title: "3. 在庫管理（計画表）", text: "最後に「📅 計画表」タブを<b>クリック</b>してください。", tab: "sim" },
+    { target: "#view-plan-content", title: "入庫の入力", text: "シミュレーションで「リユース」とした部品の必要数が自動展開されます。<br>「入庫セル（緑の列）」をクリックして入庫数を入力してみてください。<br>終わったら<b>「次へ」を押してください。</b>", tab: "plan" },
+    { target: ".app-title", title: "完了！🎉", text: "これで基本的な流れは終了です！<br>完了ボタンを押すと、元の本番データにリセットされます。", tab: "plan" }
 ];
 
 function startTutorial() {
     if(isTutorialMode) return;
     isTutorialMode = true;
-    backupAppData = JSON.stringify(appData); 
+    backupAppData = JSON.stringify(appData);
     
     appData = getInitialSampleData();
     appData.parents[0].name = "チュートリアル機種";
@@ -624,10 +604,6 @@ function showTutStep(stepIdx) {
         return;
     }
     const step = tutSteps[stepIdx];
-    
-    if(step.tab && document.querySelector('.tab-content.active').id !== 'view-' + step.tab) {
-        switchTab(step.tab);
-    }
     
     document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
     const targetEl = document.querySelector(step.target);
@@ -809,6 +785,13 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + tabId).classList.add('active');
     document.getElementById('tab-btn-' + tabId).classList.add('active');
+    
+    // チュートリアル連動
+    if (isTutorialMode) {
+        if (currentTutStep === 1 && tabId === 'master') setTimeout(nextTutStep, 300);
+        if (currentTutStep === 4 && tabId === 'sim') setTimeout(nextTutStep, 300);
+        if (currentTutStep === 8 && tabId === 'plan') setTimeout(nextTutStep, 300);
+    }
 }
 
 function renderAllViews() {
@@ -919,7 +902,13 @@ function renderMailSettings() {
     if (document.activeElement !== bodyInput) { bodyInput.value = appData.mailSettings.body || ""; bodyInput.title = appData.mailSettings.body || ""; }
 }
 
-function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); editingMasterPartIdx = appData.masterParts.length - 1; saveDataToFirebase(); }
+function addMasterPart() { 
+    appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); 
+    editingMasterPartIdx = appData.masterParts.length - 1; 
+    saveDataToFirebase(); 
+    
+    if (isTutorialMode && currentTutStep === 2) setTimeout(nextTutStep, 300);
+}
 function editMasterPart(idx) { editingMasterPartIdx = idx; renderMasterData(); setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100); }
 function saveMasterPart(idx) {
     appData.masterParts[idx].itemName = document.getElementById(`edit-part-item-${idx}`).value;
@@ -1395,6 +1384,8 @@ function addPartGroup() {
     const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
     if(firstMatch && firstMatch.choice) parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
     saveDataToFirebase();
+    
+    if(isTutorialMode && currentTutStep === 5) setTimeout(nextTutStep, 300);
 }
 
 function addUnitRow(pIdx) {
@@ -1429,6 +1420,7 @@ function updatePartGroup(pIdx, key, val) {
             u.code = ""; u.partName = ""; 
             if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice;
         });
+        if(isTutorialMode && currentTutStep === 6) setTimeout(nextTutStep, 300);
     }
     saveDataToFirebase();
 }
