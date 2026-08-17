@@ -523,7 +523,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v29 (マスターのロック機能・0表示バグ修正等)
+// ★ データリセット用: バージョン v29
 const simRef = db.ref('simulationData_v29');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
@@ -952,15 +952,34 @@ function editMasterPart(idx) {
     setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100);
 }
 function saveMasterPart(idx) {
-    appData.masterParts[idx].itemName = document.getElementById(`edit-part-item-${idx}`).value;
-    appData.masterParts[idx].code = document.getElementById(`edit-part-code-${idx}`).value;
-    appData.masterParts[idx].partName = document.getElementById(`edit-part-name-${idx}`).value;
-    appData.masterParts[idx].choice = document.getElementById(`edit-part-choice-${idx}`).value;
-    appData.masterParts[idx].stock = parseInt(String(document.getElementById(`edit-part-stock-${idx}`).value).replace(/[^0-9.-]/g, '')) || 0;
+    const oldItemName = appData.masterParts[idx].itemName;
+    const oldCode = appData.masterParts[idx].code;
+    const oldPartName = appData.masterParts[idx].partName;
+    const oldChoice = appData.masterParts[idx].choice;
+    const oldStock = appData.masterParts[idx].stock;
+
+    const newItemName = document.getElementById(`edit-part-item-${idx}`).value;
+    const newCode = document.getElementById(`edit-part-code-${idx}`).value;
+    const newPartName = document.getElementById(`edit-part-name-${idx}`).value;
+    const newChoice = document.getElementById(`edit-part-choice-${idx}`).value;
+    const newStock = parseInt(String(document.getElementById(`edit-part-stock-${idx}`).value).replace(/[^0-9.-]/g, '')) || 0;
+
+    if(oldItemName === newItemName && oldCode === newCode && oldPartName === newPartName && oldChoice === newChoice && oldStock === newStock) {
+        editingMasterPartIdx = null;
+        renderMasterData();
+        return;
+    }
+
+    appData.masterParts[idx].itemName = newItemName;
+    appData.masterParts[idx].code = newCode;
+    appData.masterParts[idx].partName = newPartName;
+    appData.masterParts[idx].choice = newChoice;
+    appData.masterParts[idx].stock = newStock;
     
     editingMasterPartIdx = null;
     saveDataToFirebase();
 }
+
 function deleteMasterPart(idx) { 
     if(confirm("削除しますか？")) { 
         appData.masterParts.splice(idx, 1); 
@@ -980,7 +999,14 @@ function editMasterUnit(idx) {
     setTimeout(() => { document.getElementById(`edit-unit-${idx}`).focus(); }, 100);
 }
 function saveMasterUnit(idx) {
-    appData.masterUnits[idx].name = document.getElementById(`edit-unit-${idx}`).value;
+    const oldVal = appData.masterUnits[idx].name;
+    const newVal = document.getElementById(`edit-unit-${idx}`).value;
+    if(oldVal === newVal) {
+        editingMasterUnitIdx = null;
+        renderMasterData();
+        return;
+    }
+    appData.masterUnits[idx].name = newVal;
     editingMasterUnitIdx = null;
     saveDataToFirebase();
 }
@@ -997,9 +1023,20 @@ function addMailAddress() {
     appData.mailSettings.emails.push("");
     saveDataToFirebase();
 }
-function updateMailAddress(idx, val) { appData.mailSettings.emails[idx] = val; saveDataToFirebase(); }
-function deleteMailAddress(idx) { appData.mailSettings.emails.splice(idx, 1); saveDataToFirebase(); }
-function updateMailSettings(key, val) { appData.mailSettings[key] = val; saveDataToFirebase(); }
+function updateMailAddress(idx, val) { 
+    if(appData.mailSettings.emails[idx] === val) return;
+    appData.mailSettings.emails[idx] = val; 
+    saveDataToFirebase(); 
+}
+function deleteMailAddress(idx) {
+    appData.mailSettings.emails.splice(idx, 1);
+    saveDataToFirebase();
+}
+function updateMailSettings(key, val) { 
+    if(appData.mailSettings[key] === val) return;
+    appData.mailSettings[key] = val; 
+    saveDataToFirebase(); 
+}
 
 // ==========================================
 // 機種ボタン＆ドラッグアンドドロップ
@@ -1065,6 +1102,7 @@ function renderParentButtons() {
 function updateParentDate(key, val) {
     const curr = getCurrentParent();
     if(!curr) return;
+    if(curr[key] === val) return;
     curr[key] = val;
     const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
     document.getElementById(inputId).value = val;
@@ -1075,7 +1113,10 @@ function editCurrentParentName() {
     const curr = getCurrentParent();
     if(!curr) return;
     const newName = prompt("機種名を変更:", curr.name);
-    if(newName && newName.trim()) { curr.name = newName.trim(); saveDataToFirebase(); }
+    if(newName && newName.trim() && newName.trim() !== curr.name) { 
+        curr.name = newName.trim(); 
+        saveDataToFirebase(); 
+    }
 }
 
 function getCurrentParent() {
@@ -1570,11 +1611,9 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        // ★ 機種がひとつも無い（すべて非表示などで見つからない）場合のエラー回避
         if(parent) {
             tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
             calculateTotals();
-            
             const btnAddPart = document.getElementById("btn-add-partgroup");
             if(btnAddPart) { btnAddPart.disabled = false; btnAddPart.style.opacity = "1"; btnAddPart.style.cursor = "pointer"; }
         }
@@ -1747,6 +1786,7 @@ function deleteUnitRow(pIdx, uIdx) {
 function updatePartGroup(pIdx, key, val) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
+    if (parent.parts[pIdx][key] === val) return;
     parent.parts[pIdx][key] = val;
     if(key === 'itemName') {
         const firstMatch = appData.masterParts.find(m => m.itemName === val);
@@ -1764,6 +1804,8 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
     if (!parent || !parent.parts[pIdx]) return;
     const unit = parent.parts[pIdx].units[uIdx];
     const itemName = parent.parts[pIdx].itemName;
+
+    if (unit[key] === val) return;
 
     unit[key] = val;
     if(key === 'code') {
@@ -1791,9 +1833,11 @@ function updateUnit(pIdx, uIdx, key, val) {
     if (!parent || !parent.parts[pIdx] || !parent.parts[pIdx].units[uIdx]) return;
 
     if (['name', 'choice'].includes(key)) {
+        if(parent.parts[pIdx].units[uIdx][key] === val) return;
         parent.parts[pIdx].units[uIdx][key] = val;
     } else {
         const numVal = parseFloat(String(val).replace(/[^0-9.-]/g, '')) || 0;
+        if(parent.parts[pIdx].units[uIdx][key] === numVal) return;
         parent.parts[pIdx].units[uIdx][key] = numVal;
     }
     saveDataToFirebase();
