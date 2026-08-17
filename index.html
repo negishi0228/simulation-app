@@ -320,11 +320,11 @@
                         <thead>
                             <tr>
                                 <th style="width:20%;">品名</th>
-                                <th style="width:20%;">品番コード</th>
+                                <th style="width:15%;">品番コード</th>
                                 <th style="width:25%;">品番名</th>
                                 <th style="width:12%;">使用区分</th>
-                                <th style="width:13%;">初期在庫数</th>
-                                <th style="width:10%;">操作</th>
+                                <th style="width:15%;">初期在庫数</th>
+                                <th style="width:13%;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-parts-tbody"></tbody>
@@ -340,8 +340,8 @@
                     <table style="min-width:auto;">
                         <thead>
                             <tr>
-                                <th style="width:80%;">ユニット名</th>
-                                <th style="width:20%;">操作</th>
+                                <th style="width:70%;">ユニット名</th>
+                                <th style="width:30%;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="master-units-tbody"></tbody>
@@ -479,7 +479,7 @@
         
         <label style="display:block; font-size:0.85rem; font-weight:bold; margin-bottom:4px;">セルの色付け (くっきりカラー)</label>
         <div style="display:flex; gap:12px; margin-bottom:20px;">
-            <div class="color-picker clear-bg" data-color="" onclick="selectModalColor('')" title="元の色に戻す (クリア)"></div>
+            <div class="color-picker clear-bg" data-color="" onclick="selectModalColor('')" title="元の色に戻す (クリア)">✕</div>
             <div class="color-picker" data-color="#ff4d4f" style="background-color:#ff4d4f;" onclick="selectModalColor('#ff4d4f')" title="赤"></div>
             <div class="color-picker" data-color="#1890ff" style="background-color:#1890ff;" onclick="selectModalColor('#1890ff')" title="青"></div>
             <div class="color-picker" data-color="#faad14" style="background-color:#faad14;" onclick="selectModalColor('#faad14')" title="黄"></div>
@@ -523,8 +523,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v28
-const simRef = db.ref('simulationData_v28');
+// ★ データリセット用: バージョン v29 (マスターのロック機能・0表示バグ修正等)
+const simRef = db.ref('simulationData_v29');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -536,6 +536,10 @@ let isLocalUpdate = false;
 let pendingData = null;
 
 let isStockOnlyView = false;
+
+// マスターデータ編集用の一時状態
+let editingMasterPartIdx = null;
+let editingMasterUnitIdx = null;
 
 let currentModalDate = "";
 let currentModalCode = "";
@@ -704,6 +708,32 @@ function exportTableToCSV(tableSelector, filename) {
 // ==============================
 // 同期制御
 // ==============================
+function toggleAutoSync() {
+    isAutoSync = !isAutoSync;
+    const btn = document.getElementById('btn-sync-toggle');
+    if (isAutoSync) {
+        btn.innerHTML = "● リアルタイム同期：ON";
+        btn.style.borderColor = "#34c759";
+        btn.style.color = "#34c759";
+        btn.style.backgroundColor = "#eefbf1";
+        if (pendingData) applyPendingData();
+    } else {
+        btn.innerHTML = "⏸ リアルタイム同期：OFF (一時停止)";
+        btn.style.borderColor = "#f56c6c";
+        btn.style.color = "#f56c6c";
+        btn.style.backgroundColor = "#fff0f0";
+    }
+}
+
+function applyPendingData() {
+    if (pendingData) {
+        appData = pendingData;
+        pendingData = null;
+        document.getElementById('update-notification').style.display = 'none';
+        renderAllViews();
+    }
+}
+
 simRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -730,6 +760,46 @@ simRef.on('value', (snapshot) => {
         saveDataToFirebase();
     }
 });
+
+function getInitialSampleData() {
+    return {
+        masterParts: [
+            { itemName: "AAA", code: "1234567", partName: "AAA 新品", choice: "new", stock: 0 },
+            { itemName: "AAA", code: "1234568", partName: "AAA リユース", choice: "reuse", stock: 1500 },
+            { itemName: "BBB", code: "1234569", partName: "BBB 新品", choice: "new", stock: 0 },
+            { itemName: "BBB", code: "1234570", partName: "BBB リユース", choice: "reuse", stock: 800 }
+        ],
+        masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
+        parents: [
+            {
+                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01", isHidden: false,
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
+                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
+                    ]
+                }]
+            },
+            {
+                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15", isHidden: false,
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 600, newPrice: 12000, reusePrice: 5000 }
+                    ]
+                }]
+            }
+        ],
+        currentParentId: "p1",
+        arrivals: {},
+        mailSettings: {
+            emails: [""],
+            subject: "【リユースシミュレーター】データ更新のお知らせ",
+            body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。"
+        }
+    };
+}
 
 function saveDataToFirebase() {
     isLocalUpdate = true;
@@ -783,32 +853,64 @@ function renderMasterData() {
     const partsBody = document.getElementById("master-parts-tbody");
     partsBody.innerHTML = "";
     appData.masterParts.forEach((m, idx) => {
-        partsBody.innerHTML += `
-            <tr>
-                <td><input type="text" value="${m.itemName}" title="${m.itemName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'itemName', this.value)"></td>
-                <td><input type="text" value="${m.code}" title="${m.code}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'code', this.value)"></td>
-                <td><input type="text" value="${m.partName}" title="${m.partName}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterPart(${idx}, 'partName', this.value)"></td>
-                <td>
-                    <select class="select-use-type ${m.choice === 'new' ? 'type-new' : 'type-reuse'}" onchange="updateMasterPart(${idx}, 'choice', this.value)">
-                        <option value="new" ${m.choice === 'new' ? 'selected' : ''}>新品</option>
-                        <option value="reuse" ${m.choice === 'reuse' ? 'selected' : ''}>リユース</option>
-                    </select>
-                </td>
-                <td><input type="text" class="text-center" value="${fmtNum(m.stock || 0)}" title="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.value='${m.stock || 0}'; this.select();" onblur="updateMasterPart(${idx}, 'stock', this.value)"></td>
-                <td><button class="btn-unit-del" onclick="deleteMasterPart(${idx})">✕</button></td>
-            </tr>
-        `;
+        if (editingMasterPartIdx === idx) {
+            partsBody.innerHTML += `
+                <tr>
+                    <td><input type="text" id="edit-part-item-${idx}" value="${m.itemName}" title="${m.itemName}" onkeydown="if(event.key==='Enter') saveMasterPart(${idx});" onfocus="this.select();"></td>
+                    <td><input type="text" id="edit-part-code-${idx}" value="${m.code}" title="${m.code}" onkeydown="if(event.key==='Enter') saveMasterPart(${idx});" onfocus="this.select();"></td>
+                    <td><input type="text" id="edit-part-name-${idx}" value="${m.partName}" title="${m.partName}" onkeydown="if(event.key==='Enter') saveMasterPart(${idx});" onfocus="this.select();"></td>
+                    <td>
+                        <select id="edit-part-choice-${idx}" class="select-use-type ${m.choice === 'new' ? 'type-new' : 'type-reuse'}" onkeydown="if(event.key==='Enter') saveMasterPart(${idx});" onchange="this.className='select-use-type ' + (this.value==='new' ? 'type-new' : 'type-reuse')">
+                            <option value="new" ${m.choice === 'new' ? 'selected' : ''}>新品</option>
+                            <option value="reuse" ${m.choice === 'reuse' ? 'selected' : ''}>リユース</option>
+                        </select>
+                    </td>
+                    <td><input type="text" id="edit-part-stock-${idx}" class="text-center" value="${fmtNum(m.stock || 0)}" title="${fmtNum(m.stock || 0)}" onkeydown="if(event.key==='Enter') saveMasterPart(${idx});" onfocus="this.value='${m.stock || 0}'; this.select();"></td>
+                    <td><button class="btn-lock" onclick="saveMasterPart(${idx})">🔒 確定</button></td>
+                </tr>
+            `;
+        } else {
+            partsBody.innerHTML += `
+                <tr>
+                    <td title="${m.itemName}">${m.itemName}</td>
+                    <td title="${m.code}">${m.code}</td>
+                    <td title="${m.partName}">${m.partName}</td>
+                    <td><span class="badge-choice ${m.choice === 'new' ? 'type-new' : 'type-reuse'}">${m.choice === 'new' ? '新品' : 'リユース'}</span></td>
+                    <td class="text-center" title="${fmtNum(m.stock || 0)}">${fmtNum(m.stock || 0)}</td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn-unlock" onclick="editMasterPart(${idx})">✏️ 編集</button>
+                            <button class="btn-group-del" onclick="deleteMasterPart(${idx})">削除</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
     });
 
     const unitsBody = document.getElementById("master-units-tbody");
     unitsBody.innerHTML = "";
     appData.masterUnits.forEach((u, idx) => {
-        unitsBody.innerHTML += `
-            <tr>
-                <td><input type="text" value="${u.name}" title="${u.name}" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMasterUnit(${idx}, this.value)"></td>
-                <td><button class="btn-unit-del" onclick="deleteMasterUnit(${idx})">✕</button></td>
-            </tr>
-        `;
+        if (editingMasterUnitIdx === idx) {
+            unitsBody.innerHTML += `
+                <tr>
+                    <td><input type="text" id="edit-unit-${idx}" value="${u.name}" title="${u.name}" onkeydown="if(event.key==='Enter') saveMasterUnit(${idx});" onfocus="this.select();"></td>
+                    <td><button class="btn-lock" onclick="saveMasterUnit(${idx})">🔒 確定</button></td>
+                </tr>
+            `;
+        } else {
+            unitsBody.innerHTML += `
+                <tr>
+                    <td title="${u.name}">${u.name}</td>
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn-unlock" onclick="editMasterUnit(${idx})">✏️ 編集</button>
+                            <button class="btn-group-del" onclick="deleteMasterUnit(${idx})">削除</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
     });
 }
 
@@ -839,17 +941,56 @@ function renderMailSettings() {
     }
 }
 
-function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); saveDataToFirebase(); }
-function updateMasterPart(idx, key, val) { 
-    if (key === 'stock') appData.masterParts[idx][key] = parseInt(String(val).replace(/[^0-9.-]/g, '')) || 0;
-    else appData.masterParts[idx][key] = val; 
+function addMasterPart() { 
+    appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); 
+    editingMasterPartIdx = appData.masterParts.length - 1;
     saveDataToFirebase(); 
 }
-function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); saveDataToFirebase(); } }
+function editMasterPart(idx) {
+    editingMasterPartIdx = idx;
+    renderMasterData();
+    setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100);
+}
+function saveMasterPart(idx) {
+    appData.masterParts[idx].itemName = document.getElementById(`edit-part-item-${idx}`).value;
+    appData.masterParts[idx].code = document.getElementById(`edit-part-code-${idx}`).value;
+    appData.masterParts[idx].partName = document.getElementById(`edit-part-name-${idx}`).value;
+    appData.masterParts[idx].choice = document.getElementById(`edit-part-choice-${idx}`).value;
+    appData.masterParts[idx].stock = parseInt(String(document.getElementById(`edit-part-stock-${idx}`).value).replace(/[^0-9.-]/g, '')) || 0;
+    
+    editingMasterPartIdx = null;
+    saveDataToFirebase();
+}
+function deleteMasterPart(idx) { 
+    if(confirm("削除しますか？")) { 
+        appData.masterParts.splice(idx, 1); 
+        editingMasterPartIdx = null;
+        saveDataToFirebase(); 
+    } 
+}
 
-function addMasterUnit() { appData.masterUnits.push({ name: "新規ユニット" }); saveDataToFirebase(); }
-function updateMasterUnit(idx, val) { appData.masterUnits[idx].name = val; saveDataToFirebase(); }
-function deleteMasterUnit(idx) { if(confirm("削除しますか？")) { appData.masterUnits.splice(idx, 1); saveDataToFirebase(); } }
+function addMasterUnit() { 
+    appData.masterUnits.push({ name: "新規ユニット" }); 
+    editingMasterUnitIdx = appData.masterUnits.length - 1;
+    saveDataToFirebase(); 
+}
+function editMasterUnit(idx) {
+    editingMasterUnitIdx = idx;
+    renderMasterData();
+    setTimeout(() => { document.getElementById(`edit-unit-${idx}`).focus(); }, 100);
+}
+function saveMasterUnit(idx) {
+    appData.masterUnits[idx].name = document.getElementById(`edit-unit-${idx}`).value;
+    editingMasterUnitIdx = null;
+    saveDataToFirebase();
+}
+function deleteMasterUnit(idx) { 
+    if(confirm("削除しますか？")) { 
+        appData.masterUnits.splice(idx, 1); 
+        editingMasterUnitIdx = null;
+        saveDataToFirebase(); 
+    } 
+}
 
 function addMailAddress() {
     if(!appData.mailSettings.emails) appData.mailSettings.emails = [];
@@ -925,6 +1066,8 @@ function updateParentDate(key, val) {
     const curr = getCurrentParent();
     if(!curr) return;
     curr[key] = val;
+    const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
+    document.getElementById(inputId).value = val;
     saveDataToFirebase();
 }
 
@@ -1427,11 +1570,14 @@ function renderTable() {
     tbody.innerHTML = "";
 
     if (!parent || !parent.parts || parent.parts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
-        calculateTotals();
-        
-        const btnAddPart = document.getElementById("btn-add-partgroup");
-        if(btnAddPart) { btnAddPart.disabled = false; btnAddPart.style.opacity = "1"; btnAddPart.style.cursor = "pointer"; }
+        // ★ 機種がひとつも無い（すべて非表示などで見つからない）場合のエラー回避
+        if(parent) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#909399;">部品データが登録されていません。「新規パーツを追加」を押してください。</td></tr>`;
+            calculateTotals();
+            
+            const btnAddPart = document.getElementById("btn-add-partgroup");
+            if(btnAddPart) { btnAddPart.disabled = false; btnAddPart.style.opacity = "1"; btnAddPart.style.cursor = "pointer"; }
+        }
         return;
     }
 
@@ -1663,7 +1809,15 @@ function deletePartGroup(pIdx) {
 
 function calculateTotals() {
     const parent = getCurrentParent();
-    if (!parent || !parent.parts) return;
+    if (!parent || !parent.parts) {
+        document.getElementById("kpi-all-new").innerText = "¥0";
+        document.getElementById("foot-all-new").innerText = "¥0";
+        document.getElementById("kpi-current").innerText = "¥0";
+        document.getElementById("foot-current").innerText = "¥0";
+        document.getElementById("kpi-savings").innerText = "¥0";
+        document.getElementById("kpi-rate").innerText = "0.0%";
+        return;
+    }
 
     let totalAllNew = 0; let totalCurrent = 0;
 
