@@ -173,17 +173,19 @@
     /* ★ チュートリアル用のスタイル（自作） ★ */
     #tut-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.6); z-index: 9000;
+        background: rgba(0, 0, 0, 0.4); z-index: 9000; 
+        pointer-events: none; /* ★クリック貫通させることで操作が可能に！ */
     }
     .tut-highlight {
         position: relative !important; z-index: 9001 !important;
-        background-color: #fff !important; border-radius: 4px; pointer-events: auto;
-        box-shadow: 0 0 0 4px #fff, 0 0 15px rgba(255, 255, 255, 0.8);
+        background-color: #fff !important; border-radius: 4px;
+        box-shadow: 0 0 0 4px #fff, 0 0 15px rgba(255, 255, 255, 1);
     }
     #tut-dialog {
         display: none; position: absolute; background: #fff; border-radius: 8px; padding: 20px;
         width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 9002;
         border-left: 4px solid var(--primary-navy);
+        pointer-events: auto; /* ★ダイアログのボタンは押せるように */
     }
 </style>
 </head>
@@ -250,7 +252,6 @@
             </div>
         </div>
 
-        <!-- 個別表示モード -->
         <div id="single-view">
             <div class="kpi-grid" id="sim-kpi">
                 <div class="kpi-card"><div class="kpi-title">全新品適用時（基準額）</div><div class="kpi-value" id="kpi-all-new">¥0</div></div>
@@ -298,7 +299,6 @@
             </div>
         </div>
 
-        <!-- 比較モード（マトリクス） -->
         <div id="compare-view" style="display: none;"></div>
     </div>
 
@@ -555,8 +555,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v30
-const simRef = db.ref('simulationData_v30');
+// ★ データリセット用: バージョン v31
+const simRef = db.ref('simulationData_v31');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -587,17 +587,17 @@ window.currentShortages = [];
 // 🎮 チュートリアル機能 (完全自作)
 // ==============================
 const tutSteps = [
-    { target: ".app-title", title: "ようこそ！", text: "機種別リユースシミュレーターへようこそ。<br>実際に画面を触りながら、基本的な使い方をご案内します。", tab: "sim" },
-    { target: "#tab-btn-master", title: "1. マスター設定", text: "まずは部品マスターを登録します。<br>上の「品番リスト設定」タブを<b>クリック</b>して切り替えてください。", tab: "sim" },
-    { target: "#btn-add-master-part", title: "部品の追加", text: "「＋ 品番を追加」ボタンを<b>クリック</b>してください。", tab: "master" },
-    { target: "#master-parts-area", title: "部品の登録と区分", text: "部品名や「初期在庫数」を入力し、区分を「リユース」に変更してみてください。<br>※終わったら「次へ」を押してください。", tab: "master" },
-    { target: "#tab-btn-sim", title: "2. シミュレーション", text: "部品の登録が終わったら、「シミュレーター」タブへ移動します。タブを<b>クリック</b>してください。", tab: "master" },
-    { target: "#btn-add-partgroup", title: "パーツの追加", text: "対象機種で使う部品を追加します。「＋ 新規パーツを追加」を<b>クリック</b>してください。", tab: "sim" },
-    { target: "#sim-table-area", title: "自動連携", text: "「品名」を選ぶとマスターの区分が自動反映されます。「リユース単価」などを入力してみましょう。<br>※終わったら「次へ」を押してください。", tab: "sim" },
-    { target: "#sim-kpi", title: "削減効果の確認", text: "リユース活用によるコスト削減額と削減率が、ここにリアルタイムで計算・表示されます！", tab: "sim" },
-    { target: "#tab-btn-plan", title: "3. 在庫管理（計画表）", text: "最後に「📅 計画表」タブを<b>クリック</b>してください。", tab: "sim" },
-    { target: "#view-plan-content", title: "入庫の入力", text: "シミュレーションで「リユース」とした部品の必要数が自動で展開されます。<br>「入庫セル（緑の列）」をクリックして入庫数を入力してみましょう。<br>※終わったら「次へ」を押してください", tab: "plan" },
-    { target: ".app-title", title: "チュートリアル完了🎉", text: "基本的な流れは以上です！終了ボタンを押すと、これまでの入力データが自動的に【元の本番データ】にリセットされます。<br><br>より詳しい説明は「📖 マニュアル」ボタンからいつでも確認できます。", tab: "plan" }
+    { target: ".app-title", title: "ようこそ！", text: "機種別リユースシミュレーターへようこそ。<br>実際に画面を触りながら、基本的な使い方をご案内します。<br><br><b>確認したら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#tab-btn-master", title: "1. マスター設定", text: "まずは部品マスターを登録します。<br>上の「品番リスト設定」タブを<b>クリック</b>して切り替えてください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#btn-add-master-part", title: "部品の追加", text: "「＋ 品番を追加」ボタンを<b>クリック</b>してください。<br><br><b>追加できたら「次へ」を押してください。</b>", tab: "master" },
+    { target: "#master-parts-area", title: "部品の登録と区分", text: "部品名や「初期在庫数」を入力し、区分を「リユース」に変更してみてください。<b>終わったら「次へ」を押してください。</b>", tab: "master" },
+    { target: "#tab-btn-sim", title: "2. シミュレーション", text: "部品の登録が終わったら、「シミュレーター」タブへ移動します。タブを<b>クリック</b>してください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "master" },
+    { target: "#btn-add-partgroup", title: "パーツの追加", text: "対象機種で使う部品を追加します。「＋ 新規パーツを追加」を<b>クリック</b>してください。<br><br><b>追加できたら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#sim-table-area", title: "自動連携", text: "「品名」を選ぶとマスターの区分が自動反映されます。「リユース単価」などを入力してみましょう。<br><b>終わったら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#sim-kpi", title: "削減効果の確認", text: "リユース活用によるコスト削減額と削減率が、ここにリアルタイムで計算・表示されます！<br><br><b>確認したら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#tab-btn-plan", title: "3. 在庫管理（計画表）", text: "最後に「📅 計画表」タブを<b>クリック</b>してください。<br><br><b>切り替えたら「次へ」を押してください。</b>", tab: "sim" },
+    { target: "#view-plan-content", title: "入庫の入力", text: "シミュレーションで「リユース」とした部品の必要数が自動で展開されます。<br>「入庫セル（緑の列）」をクリックして入庫数を入力してみましょう。<br><b>終わったら「次へ」を押してください。</b>", tab: "plan" },
+    { target: ".app-title", title: "チュートリアル完了🎉", text: "基本的な流れは以上です！完了ボタンを押すと、これまでの入力データが自動的に【元の本番データ】にリセットされます。<br><br>より詳しい説明は「📖 マニュアル」からいつでも確認できます。", tab: "plan" }
 ];
 
 function startTutorial() {
@@ -629,30 +629,33 @@ function showTutStep(stepIdx) {
     const targetEl = document.querySelector(step.target);
     const dialog = document.getElementById('tut-dialog');
     
+    dialog.style.display = 'block';
+    document.getElementById('tut-title').innerHTML = step.title;
+    document.getElementById('tut-text').innerHTML = step.text;
+    document.getElementById('tut-step-count').innerText = `${stepIdx + 1} / ${tutSteps.length}`;
+    
+    if (stepIdx === tutSteps.length - 1) {
+        document.getElementById('tut-next-btn').innerText = "完了";
+    } else {
+        document.getElementById('tut-next-btn').innerText = "次へ ❯";
+    }
+
+    dialog.style.transform = "none";
     if(targetEl) {
         targetEl.classList.add('tut-highlight');
         targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        dialog.style.display = 'block';
-        document.getElementById('tut-title').innerHTML = step.title;
-        document.getElementById('tut-text').innerHTML = step.text;
-        document.getElementById('tut-step-count').innerText = `${stepIdx + 1} / ${tutSteps.length}`;
-        
         const rect = targetEl.getBoundingClientRect();
-        
-        // ダイアログの表示位置調整
         if(rect.bottom + 200 > window.innerHeight) {
             dialog.style.top = Math.max(10, (window.scrollY + rect.top - dialog.offsetHeight - 20)) + "px";
         } else {
             dialog.style.top = (window.scrollY + rect.bottom + 20) + "px";
         }
         dialog.style.left = Math.max(10, rect.left + window.scrollX) + "px";
-        
-        if (stepIdx === tutSteps.length - 1) {
-            document.getElementById('tut-next-btn').innerText = "完了";
-        } else {
-            document.getElementById('tut-next-btn').innerText = "次へ ❯";
-        }
+    } else {
+        dialog.style.top = (window.scrollY + 100) + "px";
+        dialog.style.left = "50%";
+        dialog.style.transform = "translateX(-50%)";
     }
 }
 
@@ -677,7 +680,6 @@ function endTutorial() {
     renderAllViews();
     alert("チュートリアルが完了しました。元のデータに戻りました！");
 }
-
 
 // ==============================
 // 📖 マニュアル表示
@@ -804,13 +806,6 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + tabId).classList.add('active');
     document.getElementById('tab-btn-' + tabId).classList.add('active');
-    
-    // チュートリアル連動
-    if (isTutorialMode) {
-        if (currentTutStep === 1 && tabId === 'master') setTimeout(nextTutStep, 300);
-        if (currentTutStep === 4 && tabId === 'sim') setTimeout(nextTutStep, 300);
-        if (currentTutStep === 8 && tabId === 'plan') setTimeout(nextTutStep, 300);
-    }
 }
 
 function renderAllViews() {
@@ -921,12 +916,7 @@ function renderMailSettings() {
     if (document.activeElement !== bodyInput) { bodyInput.value = appData.mailSettings.body || ""; bodyInput.title = appData.mailSettings.body || ""; }
 }
 
-function addMasterPart() { 
-    appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); 
-    editingMasterPartIdx = appData.masterParts.length - 1; 
-    saveDataToFirebase(); 
-    if (isTutorialMode && currentTutStep === 2) setTimeout(nextTutStep, 300);
-}
+function addMasterPart() { appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); editingMasterPartIdx = appData.masterParts.length - 1; saveDataToFirebase(); }
 function editMasterPart(idx) { editingMasterPartIdx = idx; renderMasterData(); setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100); }
 function saveMasterPart(idx) {
     appData.masterParts[idx].itemName = document.getElementById(`edit-part-item-${idx}`).value;
@@ -1402,8 +1392,6 @@ function addPartGroup() {
     const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
     if(firstMatch && firstMatch.choice) parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
     saveDataToFirebase();
-    
-    if(isTutorialMode && currentTutStep === 5) setTimeout(nextTutStep, 300);
 }
 
 function addUnitRow(pIdx) {
@@ -1438,7 +1426,6 @@ function updatePartGroup(pIdx, key, val) {
             u.code = ""; u.partName = ""; 
             if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice;
         });
-        if(isTutorialMode && currentTutStep === 6) setTimeout(nextTutStep, 300);
     }
     saveDataToFirebase();
 }
