@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>機種別リユースシミュレーター</title>
+<!-- チュートリアル用ライブラリ (Driver.js) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
 
 <style>
     :root {
@@ -169,27 +172,6 @@
     .manual-section h4 { color: var(--primary-navy); border-bottom: 2px solid #eee; padding-bottom: 6px; margin-bottom: 10px; }
     .manual-section ul { margin: 0; padding-left: 20px; color: var(--text-sub); font-size: 0.9rem; line-height: 1.6; }
     .manual-section li { margin-bottom: 6px; }
-
-    /* ★ チュートリアル用のスタイル（自作・クリック貫通） ★ */
-    #tut-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.4); z-index: 9000;
-        pointer-events: none; /* クリック貫通 */
-        transition: all 0.3s;
-    }
-    .tut-highlight {
-        position: relative !important; z-index: 9001 !important;
-        background-color: #fff !important; border-radius: 4px; pointer-events: auto;
-        box-shadow: 0 0 0 4px #fff, 0 0 15px rgba(255, 255, 255, 1);
-        transition: all 0.3s;
-    }
-    #tut-dialog {
-        display: none; position: absolute; background: #fff; border-radius: 8px; padding: 20px;
-        width: 340px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); z-index: 9002;
-        border-left: 4px solid var(--primary-navy);
-        pointer-events: auto;
-        transition: all 0.3s ease-out;
-    }
 </style>
 </head>
 <body>
@@ -201,8 +183,8 @@
             <h1 class="app-title">📊 機種別リユースシミュレーター</h1>
             
             <div style="display:flex; align-items:center; gap:8px;">
-                <button id="btn-tutorial" class="btn btn-navy" style="padding: 6px 12px; font-size: 0.85rem; background-color:#e6a23c; border-color:#e6a23c;" onclick="startTutorial()">
-                    🔰 チュートリアルを開始
+                <button id="btn-tutorial" class="btn btn-navy" style="padding: 6px 12px; font-size: 0.85rem;" onclick="startTutorial()">
+                    🔰 チュートリアル
                 </button>
                 <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem;" onclick="openManualModal()">
                     📖 マニュアル
@@ -348,7 +330,7 @@
                         <tbody id="master-parts-tbody"></tbody>
                     </table>
                 </div>
-                <button class="btn btn-navy" id="btn-add-master-part" style="margin-top:12px;" onclick="addMasterPart()">＋ 品番を追加</button>
+                <button class="btn btn-navy" style="margin-top:12px;" onclick="addMasterPart()">＋ 品番を追加</button>
             </div>
             
             <!-- ユニットマスター -->
@@ -404,14 +386,13 @@
 </div>
 
 <!-- ==========================================
-     各種モーダル群（重複削除済み）
+     マニュアル表示用モーダル
 =========================================== -->
-
-<!-- マニュアルモーダル -->
 <div id="manual-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:24px; width:700px; max-height:85vh; overflow-y:auto; box-shadow:0 4px 15px rgba(0,0,0,0.3); position:relative;">
         <button style="position:absolute; top:15px; right:15px; background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:#999;" onclick="closeManualModal()">✕</button>
         <h2 style="margin-top:0; color:var(--primary-navy); border-bottom:3px solid var(--border-color); padding-bottom:10px;">📖 アプリ運用マニュアル</h2>
+        
         <div class="manual-section">
             <h4>🎯 このアプリの目的</h4>
             <p style="font-size:0.9rem; line-height:1.6; color:var(--text-sub);">
@@ -419,6 +400,7 @@
                 また、リユース設定した部品の必要数をカレンダーに展開し、<b>在庫不足が起きないよう入庫予定を管理</b>することが目的です。
             </p>
         </div>
+
         <div class="manual-section">
             <h4>⚙️ 1. 品番リスト設定（マスター設定）</h4>
             <ul>
@@ -426,36 +408,49 @@
                 <li>ここで「使用区分（新品/リユース）」と「初期在庫数」を設定しておくことで、シミュレーターや計画表に自動連携されます。</li>
             </ul>
         </div>
+
         <div class="manual-section">
             <h4>📊 2. シミュレーター画面</h4>
             <ul>
-                <li><b>機種の登録：</b>「＋ 新規機種登録」から対象の機種を作成し、使用期間を設定します。</li>
-                <li><b>部品の追加：</b>その機種で使う部品を追加し、「新品」か「リユース」かを選択します。</li>
-                <li><b>コスト確認：</b>リユース品を活用した場合の「削減金額」と「削減率」が上部のカードにリアルタイム表示されます。</li>
+                <li><b>機種の登録：</b>「＋ 新規機種登録」から対象の機種を作成し、使用期間（開始日〜終了日）を設定します。</li>
+                <li><b>部品の追加：</b>その機種で使う部品を追加し、「新品」か「リユース」かを選択します。（マスターの情報が自動入力されます）</li>
+                <li><b>コスト確認：</b>リユース品を活用した場合の「削減金額」と「削減率」が上部のカードにリアルタイムで表示されます。</li>
+                <li><b>確定とロック：</b>入力が終わったら「🔒 確定」ボタンを押すと、誤操作で書き換わるのを防げます。</li>
             </ul>
         </div>
+
         <div class="manual-section">
             <h4>📅 3. 計画表（在庫管理表）画面</h4>
             <ul>
-                <li>シミュレーターで「リユース」に設定した部品の必要数がカレンダーに自動展開されます。</li>
+                <li>シミュレーターで「リユース」に設定した部品の必要数が、機種の開始日（カレンダー）に自動で表示されます。</li>
                 <li><b>入庫の入力：</b>「入庫」のセルをクリックすると、入庫予定数やコメント、セルの色付けが行えます。</li>
+                <li><b>在庫の確認：</b>「初期在庫＋入庫数－使用数」が自動計算され、不足（マイナス）になるとセルが赤字で警告されます。</li>
             </ul>
         </div>
-        <div style="text-align:center; margin-top:20px;"><button class="btn btn-navy" onclick="closeManualModal()">閉じる</button></div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn btn-navy" onclick="closeManualModal()">閉じる</button>
+        </div>
     </div>
 </div>
 
-<!-- 表示設定モーダル -->
+<!-- ==========================================
+     機種表示設定モーダル
+=========================================== -->
 <div id="visibility-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:340px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">👁️ 機種の表示設定</h3>
         <p style="font-size:0.85rem; color:var(--text-sub);">チェックを外した機種は非表示になります。</p>
         <div id="visibility-list" style="max-height: 300px; overflow-y:auto; margin-bottom:16px;"></div>
-        <div style="display:flex; justify-content:flex-end;"><button class="btn btn-navy" style="padding:6px 16px;" onclick="closeVisibilityModal()">完了</button></div>
+        <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-navy" style="padding:6px 16px;" onclick="closeVisibilityModal()">完了</button>
+        </div>
     </div>
 </div>
 
-<!-- メール送信先選択モーダル -->
+<!-- ==========================================
+     メール宛先選択モーダル
+=========================================== -->
 <div id="mail-select-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:360px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">✉️ 送信先の選択</h3>
@@ -468,7 +463,9 @@
     </div>
 </div>
 
-<!-- 入庫＆コメントモーダル -->
+<!-- ==========================================
+     入庫＆コメント設定用モーダル
+=========================================== -->
 <div id="arrival-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:6px; padding:20px; width:380px; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:10px;">入庫・コメント設定</h3>
@@ -497,25 +494,13 @@
             <button class="btn btn-navy" style="padding:6px 10px;" onclick="addTempComment()">追加</button>
         </div>
         
-        <div id="modal-comment-list" style="max-height:120px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:8px; background:#f9f9f9; margin-bottom:20px; font-size:0.85rem;"></div>
+        <div id="modal-comment-list" style="max-height:120px; overflow-y:auto; border:1px solid #ccc; border-radius:4px; padding:8px; background:#f9f9f9; margin-bottom:20px; font-size:0.85rem;">
+            <!-- JSでコメント履歴を描画 -->
+        </div>
         
         <div style="display:flex; justify-content:flex-end; gap:8px;">
             <button class="btn btn-outline" style="padding:8px 16px;" onclick="closeArrivalModal()">キャンセル</button>
             <button class="btn btn-navy" style="padding:8px 16px;" onclick="saveArrivalModal()">すべて保存</button>
-        </div>
-    </div>
-</div>
-
-<!-- ★自作チュートリアル用ダイアログ★ -->
-<div id="tut-overlay"></div>
-<div id="tut-dialog">
-    <h3 id="tut-title" style="margin-top:0; color:var(--primary-navy); border-bottom:1px solid #eee; padding-bottom:8px;"></h3>
-    <p id="tut-text" style="font-size:0.9rem; line-height:1.6; color:var(--text-main); margin-bottom:16px;"></p>
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="tut-step-count" style="font-size:0.8rem; color:#999; font-weight:bold;"></span>
-        <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem;" onclick="endTutorial()">終了</button>
-            <button id="tut-next-btn" class="btn btn-navy" style="padding:6px 12px; font-size:0.8rem;" onclick="nextTutStep()">次へ ❯</button>
         </div>
     </div>
 </div>
@@ -535,11 +520,11 @@ const firebaseConfig = {
   appId: "1:874578438763:web:b60e0ca054aaca1ad0df2e"
 };
 
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ★ データリセット用: バージョン v34
-const simRef = db.ref('simulationData_v34');
+// ★ データリセット用: バージョン v29
+const simRef = db.ref('simulationData_v29');
 
 let appData = { masterParts: [], masterUnits: [], parents: [], currentParentId: "", arrivals: {}, mailSettings: { emails: [], subject: "", body: "" } };
 let isCompareMode = false;
@@ -552,11 +537,6 @@ let pendingData = null;
 
 let isStockOnlyView = false;
 
-// チュートリアル用の状態管理
-let isTutorialMode = false;
-let backupAppData = null;
-let currentTutStep = 0;
-
 // マスターデータ編集用の一時状態
 let editingMasterPartIdx = null;
 let editingMasterUnitIdx = null;
@@ -567,143 +547,133 @@ let tempComments = [];
 window.currentShortages = [];
 
 // ==============================
-// 🎮 チュートリアル機能 (完全自作)
+// チュートリアル & マニュアル
 // ==============================
-const tutSteps = [
-    { target: ".app-title", title: "ようこそ！", text: "チュートリアルを開始します。<br>実際に操作しながら使い方を学びましょう。<br><b>「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#tab-btn-master", title: "1. マスター設定", text: "まずは部品マスターを登録します。<br>上の「品番リスト設定」タブを<b>クリック</b>して切り替えてください。", tab: "sim" },
-    { target: "#btn-add-master-part", title: "部品の追加", text: "「＋ 品番を追加」ボタンを<b>クリック</b>してください。", tab: "master" },
-    { target: "#master-parts-area", title: "部品の登録", text: "追加された行の区分を「リユース」に変更してみてください。<br>終わったら<b>「次へ」を押してください。</b>", tab: "master" },
-    { target: "#tab-btn-sim", title: "2. シミュレーション", text: "「シミュレーター」タブを<b>クリック</b>してください。", tab: "master" },
-    { target: "#btn-add-partgroup", title: "パーツの追加", text: "「＋ 新規パーツを追加」を<b>クリック</b>してください。", tab: "sim" },
-    { target: "#sim-table-area", title: "自動連携", text: "品名のプルダウンを開き、先ほどマスターで作成した部品を選んでみてください。<br>マスターの区分が自動反映されます。<br>終わったら<b>「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#sim-kpi", title: "削減効果の確認", text: "リユース活用によるコスト削減額がここに表示されます。<br><b>「次へ」を押してください。</b>", tab: "sim" },
-    { target: "#tab-btn-plan", title: "3. 在庫管理（計画表）", text: "最後に「📅 計画表」タブを<b>クリック</b>してください。", tab: "sim" },
-    { target: "#view-plan-content", title: "入庫の入力", text: "シミュレーションで「リユース」とした部品の必要数が自動展開されます。<br>「入庫セル（緑の列）」をクリックして入庫数を入力してみてください。<br>終わったら<b>「次へ」を押してください。</b>", tab: "plan" },
-    { target: ".app-title", title: "完了！🎉", text: "これで基本的な流れは終了です！<br>完了ボタンを押すと、元の本番データにリセットされます。", tab: "plan" }
-];
+function openManualModal() {
+    document.getElementById("manual-modal").style.display = "flex";
+}
+function closeManualModal() {
+    document.getElementById("manual-modal").style.display = "none";
+}
 
 function startTutorial() {
-    if(isTutorialMode) return;
-    isTutorialMode = true;
-    backupAppData = JSON.stringify(appData);
-    
-    appData = getInitialSampleData();
-    appData.parents[0].name = "チュートリアル機種";
-    
-    document.getElementById("tut-overlay").style.display = "block";
-    currentTutStep = 0;
-    switchTab('sim');
-    renderAllViews();
-    setTimeout(() => { showTutStep(0); }, 300);
-}
-
-function showTutStep(stepIdx) {
-    if(stepIdx >= tutSteps.length) {
-        endTutorial();
-        return;
-    }
-    const step = tutSteps[stepIdx];
-    
-    document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-    const targetEl = document.querySelector(step.target);
-    const dialog = document.getElementById('tut-dialog');
-    
-    dialog.style.display = 'block';
-    document.getElementById('tut-title').innerHTML = step.title;
-    document.getElementById('tut-text').innerHTML = step.text;
-    document.getElementById('tut-step-count').innerText = `${stepIdx + 1} / ${tutSteps.length}`;
-    
-    if (stepIdx === tutSteps.length - 1) {
-        document.getElementById('tut-next-btn').innerText = "完了";
-    } else {
-        document.getElementById('tut-next-btn').innerText = "次へ ❯";
-    }
-
-    dialog.style.transform = "none";
-    if(targetEl) {
-        targetEl.classList.add('tut-highlight');
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        setTimeout(() => {
-            const rect = targetEl.getBoundingClientRect();
-            let topPos = window.scrollY + rect.bottom + 15;
-            if(rect.bottom + 200 > window.innerHeight) topPos = Math.max(10, window.scrollY + rect.top - dialog.offsetHeight - 15);
-            dialog.style.top = topPos + "px";
-            dialog.style.left = Math.max(10, window.scrollX + rect.left) + "px";
-        }, 100);
-    } else {
-        dialog.style.top = (window.scrollY + 100) + "px";
-        dialog.style.left = "50%";
-        dialog.style.transform = "translateX(-50%)";
-    }
-}
-
-function nextTutStep() {
-    currentTutStep++;
-    showTutStep(currentTutStep);
-}
-
-function endTutorial() {
-    if (!isTutorialMode) return;
-    isTutorialMode = false;
-    
-    document.getElementById("tut-overlay").style.display = "none";
-    document.getElementById("tut-dialog").style.display = "none";
-    document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-    
-    if(backupAppData) {
-        appData = JSON.parse(backupAppData);
-        backupAppData = null;
-    }
-    switchTab('sim');
-    renderAllViews();
-    alert("チュートリアルが完了しました。元の本番データに戻りました！");
+    const driver = window.driver.js.driver;
+    const driverObj = driver({
+        showProgress: true,
+        allowClose: true,
+        nextBtnText: '次へ ❯',
+        prevBtnText: '❮ 戻る',
+        doneBtnText: '完了',
+        steps: [
+            { 
+                element: '.app-title', 
+                popover: { title: 'ようこそ！', description: '機種別リユースシミュレーターへようこそ。<br>基本的な使い方をステップ・バイ・ステップでご案内します。', side: "bottom", align: 'start' } 
+            },
+            { 
+                element: '#tab-btn-master', 
+                popover: { title: '1. マスター設定', description: 'まずはここから！<br>使用する「部品」や「ユニット」、「初期在庫」を登録します。', side: "bottom" },
+                onHighlightStarted: () => switchTab('master') 
+            },
+            { 
+                element: '#master-parts-area', 
+                popover: { title: '部品の登録', description: 'ここで部品情報と【新品/リユース】の区分を設定しておくと、他の画面で自動的に連携されます。', side: "right" } 
+            },
+            { 
+                element: '#tab-btn-sim', 
+                popover: { title: '2. シミュレーション', description: '部品の登録が終わったら、シミュレーター画面へ移動します。', side: "bottom" },
+                onHighlightStarted: () => switchTab('sim') 
+            },
+            { 
+                element: '#sim-controls', 
+                popover: { title: '機種と使用期間の設定', description: '「新規機種登録」で機種を追加し、カレンダーでその機種の「使用期間（生産期間）」を設定します。', side: "bottom" } 
+            },
+            { 
+                element: '#sim-table-area', 
+                popover: { title: '部品の追加と単価設定', description: '対象機種で使う部品を追加します。<br>「新品単価」「リユース単価」を入力し、リユースを選択するとコスト削減効果が計算されます。', side: "top" } 
+            },
+            { 
+                element: '#sim-kpi', 
+                popover: { title: '削減効果の確認', description: '設定した部品のコストと、どれだけ削減できたか（削減金額・削減率）がここにリアルタイム表示されます！', side: "bottom" } 
+            },
+            { 
+                element: '#tab-btn-plan', 
+                popover: { title: '3. 在庫管理（計画表）', description: '最後に計画表タブを見てみましょう。', side: "bottom" },
+                onHighlightStarted: () => switchTab('plan') 
+            },
+            { 
+                element: '#view-plan-content', 
+                popover: { title: '入庫と在庫の管理', description: 'シミュレーションで「リユース」とした部品の必要数が、機種の開始日に自動で展開されます。<br><br>「入庫セル」をクリックして入庫予定を入力し、在庫がマイナス（赤字）にならないよう管理しましょう。', side: "top" } 
+            },
+            { 
+                element: '#btn-tutorial', 
+                popover: { title: 'チュートリアル完了🎉', description: '基本的な流れは以上です！<br>より詳しい説明は隣の「📖 マニュアル」ボタンからいつでも確認できます。', side: "bottom" } 
+            }
+        ]
+    });
+    driverObj.drive();
 }
 
 // ==============================
-// 📖 マニュアル表示
-// ==============================
-function openManualModal() { document.getElementById("manual-modal").style.display = "flex"; }
-function closeManualModal() { document.getElementById("manual-modal").style.display = "none"; }
-
-// ==============================
-// ✉️ Gmail 送信 ＆ CSV出力
+// Gmail 送信 ＆ CSV出力機能
 // ==============================
 function openMailSelectModal() {
     if (!appData.mailSettings || !appData.mailSettings.emails || appData.mailSettings.emails.length === 0) {
         alert("メール設定が見つかりません。「品番リスト設定」タブから送信先アドレスを登録してください。");
         return;
     }
+    
     const validEmails = appData.mailSettings.emails.filter(e => e.trim() !== "");
-    if (validEmails.length === 0) { alert("有効なメールアドレスが登録されていません。"); return; }
+    if (validEmails.length === 0) {
+        alert("有効なメールアドレスが登録されていません。");
+        return;
+    }
     
     const list = document.getElementById("mail-select-list");
     list.innerHTML = "";
     validEmails.forEach((email) => {
-        list.innerHTML += `<div style="padding:6px; border-bottom:1px solid #eee;"><label style="cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="mail-target-cb" value="${email}" checked><span style="color:var(--text-main); font-size:0.95rem;">${email}</span></label></div>`;
+        list.innerHTML += `
+            <div style="padding:6px; border-bottom:1px solid #eee;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" class="mail-target-cb" value="${email}" checked>
+                    <span style="color:var(--text-main); font-size:0.95rem;">${email}</span>
+                </label>
+            </div>
+        `;
     });
+    
     document.getElementById("mail-select-modal").style.display = "flex";
 }
-function closeMailSelectModal() { document.getElementById("mail-select-modal").style.display = "none"; }
+
+function closeMailSelectModal() {
+    document.getElementById("mail-select-modal").style.display = "none";
+}
+
 function executeSendMail() {
     const checkboxes = document.querySelectorAll(".mail-target-cb:checked");
     const selectedEmails = Array.from(checkboxes).map(cb => cb.value);
-    if (selectedEmails.length === 0) return alert("送信先を1つ以上選択してください。");
+    
+    if (selectedEmails.length === 0) {
+        alert("送信先を1つ以上選択してください。");
+        return;
+    }
     
     const emails = selectedEmails.join(',');
     const subject = encodeURIComponent(appData.mailSettings.subject || "【リユースシミュレーター】データ更新のお知らせ");
+    
     let bodyText = appData.mailSettings.body || "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。\n\n";
     bodyText += "\n\n" + window.location.href;
     const body = encodeURIComponent(bodyText);
+    
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${emails}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
+    
     closeMailSelectModal();
 }
 
 function exportTableToCSV(tableSelector, filename) {
     const table = document.querySelector(tableSelector);
     if (!table) return alert("出力するデータがありません。");
+    
     let csv = [];
     const rows = table.querySelectorAll("tr");
     for (let i = 0; i < rows.length; i++) {
@@ -712,9 +682,14 @@ function exportTableToCSV(tableSelector, filename) {
             let val = "";
             const input = cols[j].querySelector("input[type='text'], input[type='number'], select");
             if (input) {
-                if(input.tagName === "SELECT") val = input.options[input.selectedIndex]?.text || "";
-                else val = input.value;
-            } else { val = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " "); }
+                if(input.tagName === "SELECT") {
+                    val = input.options[input.selectedIndex]?.text || "";
+                } else {
+                    val = input.value;
+                }
+            } else {
+                val = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ");
+            }
             val = val.replace(/"/g, '""');
             row.push('"' + val + '"');
         }
@@ -731,27 +706,35 @@ function exportTableToCSV(tableSelector, filename) {
 }
 
 // ==============================
-// 🔄 同期制御
+// 同期制御
 // ==============================
 function toggleAutoSync() {
     isAutoSync = !isAutoSync;
     const btn = document.getElementById('btn-sync-toggle');
     if (isAutoSync) {
         btn.innerHTML = "● リアルタイム同期：ON";
-        btn.style.borderColor = "#34c759"; btn.style.color = "#34c759"; btn.style.backgroundColor = "#eefbf1";
+        btn.style.borderColor = "#34c759";
+        btn.style.color = "#34c759";
+        btn.style.backgroundColor = "#eefbf1";
         if (pendingData) applyPendingData();
     } else {
         btn.innerHTML = "⏸ リアルタイム同期：OFF (一時停止)";
-        btn.style.borderColor = "#f56c6c"; btn.style.color = "#f56c6c"; btn.style.backgroundColor = "#fff0f0";
+        btn.style.borderColor = "#f56c6c";
+        btn.style.color = "#f56c6c";
+        btn.style.backgroundColor = "#fff0f0";
     }
 }
+
 function applyPendingData() {
-    if (pendingData) { appData = pendingData; pendingData = null; document.getElementById('update-notification').style.display = 'none'; renderAllViews(); }
+    if (pendingData) {
+        appData = pendingData;
+        pendingData = null;
+        document.getElementById('update-notification').style.display = 'none';
+        renderAllViews();
+    }
 }
 
 simRef.on('value', (snapshot) => {
-    if (isTutorialMode) return; 
-
     const data = snapshot.val();
     if (data) {
         if(!data.masterParts) data.masterParts = [];
@@ -759,23 +742,66 @@ simRef.on('value', (snapshot) => {
         if(!data.arrivals) data.arrivals = {};
         if(!data.parents) data.parents = [];
         if(!data.mailSettings) data.mailSettings = { emails: [], subject: "【リユースシミュレーター】データ更新のお知らせ", body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。" };
+        
         data.parents.forEach(p => { if (typeof p.isHidden === 'undefined') p.isHidden = false; });
         
         if (isAutoSync || isLocalUpdate) {
-            appData = data; isLocalUpdate = false; pendingData = null; document.getElementById('update-notification').style.display = 'none'; renderAllViews();
+            appData = data;
+            isLocalUpdate = false;
+            pendingData = null;
+            document.getElementById('update-notification').style.display = 'none';
+            renderAllViews();
         } else {
-            pendingData = data; document.getElementById('update-notification').style.display = 'block';
+            pendingData = data;
+            document.getElementById('update-notification').style.display = 'block';
         }
     } else {
-        appData = getInitialSampleData(); saveDataToFirebase();
+        appData = getInitialSampleData();
+        saveDataToFirebase();
     }
 });
 
+function getInitialSampleData() {
+    return {
+        masterParts: [
+            { itemName: "AAA", code: "1234567", partName: "AAA 新品", choice: "new", stock: 0 },
+            { itemName: "AAA", code: "1234568", partName: "AAA リユース", choice: "reuse", stock: 1500 },
+            { itemName: "BBB", code: "1234569", partName: "BBB 新品", choice: "new", stock: 0 },
+            { itemName: "BBB", code: "1234570", partName: "BBB リユース", choice: "reuse", stock: 800 }
+        ],
+        masterUnits: [{ name: "AT裏樋" }, { name: "三連樋" }, { name: "1×4昇降" }],
+        parents: [
+            {
+                id: "p1", name: "AO2Y", startDate: "2026-08-03", endDate: "2026-10-01", isHidden: false,
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "AT裏樋", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 12000, reusePrice: 5000 },
+                        { name: "三連樋", code: "1234570", partName: "BBB リユース", choice: "reuse", insuu: 1, qty: 1000, newPrice: 18000, reusePrice: 8000 }
+                    ]
+                }]
+            },
+            {
+                id: "p2", name: "GZF", startDate: "2026-08-10", endDate: "2026-10-15", isHidden: false,
+                parts: [{
+                    itemName: "AAA", locked: false,
+                    units: [
+                        { name: "1×4昇降", code: "1234568", partName: "AAA リユース", choice: "reuse", insuu: 1, qty: 600, newPrice: 12000, reusePrice: 5000 }
+                    ]
+                }]
+            }
+        ],
+        currentParentId: "p1",
+        arrivals: {},
+        mailSettings: {
+            emails: [""],
+            subject: "【リユースシミュレーター】データ更新のお知らせ",
+            body: "シミュレーターのデータが更新されました。\n以下のURLより最新の状況をご確認ください。"
+        }
+    };
+}
+
 function saveDataToFirebase() {
-    if (isTutorialMode) {
-        renderAllViews();
-        return;
-    }
     isLocalUpdate = true;
     simRef.set(appData);
 }
@@ -785,14 +811,10 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + tabId).classList.add('active');
     document.getElementById('tab-btn-' + tabId).classList.add('active');
-    
-    // チュートリアル連動
-    if (isTutorialMode) {
-        if (currentTutStep === 1 && tabId === 'master') setTimeout(nextTutStep, 300);
-        if (currentTutStep === 4 && tabId === 'sim') setTimeout(nextTutStep, 300);
-        if (currentTutStep === 8 && tabId === 'plan') setTimeout(nextTutStep, 300);
-    }
 }
+
+function fmtNum(v) { return (v || 0).toLocaleString(); }
+function fmtYen(v) { return "¥" + fmtNum(v); }
 
 function renderAllViews() {
     renderParentButtons();
@@ -809,14 +831,18 @@ function renderAllViews() {
 function openVisibilityModal() {
     const list = document.getElementById("visibility-list");
     list.innerHTML = "";
-    appData.parents.forEach((p, idx) => { list.innerHTML += `<div style="padding:6px; border-bottom:1px solid #eee;"><label style="cursor:pointer;"><input type="checkbox" ${!p.isHidden ? 'checked' : ''} onchange="toggleParentVisibility(${idx}, this.checked)"> <strong style="color:var(--text-main); font-size:0.95rem;">${p.name}</strong></label></div>`; });
+    appData.parents.forEach((p, idx) => {
+        list.innerHTML += `<div style="padding:6px; border-bottom:1px solid #eee;"><label style="cursor:pointer;"><input type="checkbox" ${!p.isHidden ? 'checked' : ''} onchange="toggleParentVisibility(${idx}, this.checked)"> <strong style="color:var(--text-main); font-size:0.95rem;">${p.name}</strong></label></div>`;
+    });
     document.getElementById("visibility-modal").style.display = "flex";
 }
 function closeVisibilityModal() { document.getElementById("visibility-modal").style.display = "none"; }
 function toggleParentVisibility(idx, isChecked) {
     appData.parents[idx].isHidden = !isChecked;
     const visibleParents = appData.parents.filter(p => !p.isHidden);
-    if(visibleParents.length > 0 && appData.parents[idx].id === appData.currentParentId && appData.parents[idx].isHidden) { appData.currentParentId = visibleParents[0].id; }
+    if(visibleParents.length > 0 && appData.parents[idx].id === appData.currentParentId && appData.parents[idx].isHidden) {
+        appData.currentParentId = visibleParents[0].id;
+    }
     saveDataToFirebase();
 }
 
@@ -893,42 +919,124 @@ function renderMailSettings() {
     tbody.innerHTML = "";
     if (appData.mailSettings && appData.mailSettings.emails) {
         appData.mailSettings.emails.forEach((email, idx) => {
-            tbody.innerHTML += `<tr><td><input type="text" value="${email}" title="${email}" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMailAddress(${idx}, this.value)"></td><td><button class="btn-unit-del" onclick="deleteMailAddress(${idx})">✕</button></td></tr>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td><input type="text" value="${email}" title="${email}" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter') this.blur();" onfocus="this.select();" onblur="updateMailAddress(${idx}, this.value)"></td>
+                    <td><button class="btn-unit-del" onclick="deleteMailAddress(${idx})">✕</button></td>
+                </tr>
+            `;
         });
     }
+    
     const subjectInput = document.getElementById("mail-subject");
     const bodyInput = document.getElementById("mail-body");
-    if (document.activeElement !== subjectInput) { subjectInput.value = appData.mailSettings.subject || ""; subjectInput.title = appData.mailSettings.subject || ""; }
-    if (document.activeElement !== bodyInput) { bodyInput.value = appData.mailSettings.body || ""; bodyInput.title = appData.mailSettings.body || ""; }
+    
+    if (document.activeElement !== subjectInput) {
+        subjectInput.value = appData.mailSettings.subject || "";
+        subjectInput.title = appData.mailSettings.subject || "";
+    }
+    if (document.activeElement !== bodyInput) {
+        bodyInput.value = appData.mailSettings.body || "";
+        bodyInput.title = appData.mailSettings.body || "";
+    }
 }
 
 function addMasterPart() { 
     appData.masterParts.push({ itemName: "新規品名", code: "", partName: "", choice: "new", stock: 0 }); 
-    editingMasterPartIdx = appData.masterParts.length - 1; 
+    editingMasterPartIdx = appData.masterParts.length - 1;
     saveDataToFirebase(); 
-    
-    if (isTutorialMode && currentTutStep === 2) setTimeout(nextTutStep, 300);
 }
-function editMasterPart(idx) { editingMasterPartIdx = idx; renderMasterData(); setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100); }
+function editMasterPart(idx) {
+    editingMasterPartIdx = idx;
+    renderMasterData();
+    setTimeout(() => { document.getElementById(`edit-part-item-${idx}`).focus(); }, 100);
+}
 function saveMasterPart(idx) {
-    appData.masterParts[idx].itemName = document.getElementById(`edit-part-item-${idx}`).value;
-    appData.masterParts[idx].code = document.getElementById(`edit-part-code-${idx}`).value;
-    appData.masterParts[idx].partName = document.getElementById(`edit-part-name-${idx}`).value;
-    appData.masterParts[idx].choice = document.getElementById(`edit-part-choice-${idx}`).value;
-    appData.masterParts[idx].stock = parseInt(String(document.getElementById(`edit-part-stock-${idx}`).value).replace(/[^0-9.-]/g, '')) || 0;
-    editingMasterPartIdx = null; saveDataToFirebase();
+    const oldItemName = appData.masterParts[idx].itemName;
+    const oldCode = appData.masterParts[idx].code;
+    const oldPartName = appData.masterParts[idx].partName;
+    const oldChoice = appData.masterParts[idx].choice;
+    const oldStock = appData.masterParts[idx].stock;
+
+    const newItemName = document.getElementById(`edit-part-item-${idx}`).value;
+    const newCode = document.getElementById(`edit-part-code-${idx}`).value;
+    const newPartName = document.getElementById(`edit-part-name-${idx}`).value;
+    const newChoice = document.getElementById(`edit-part-choice-${idx}`).value;
+    const newStock = parseInt(String(document.getElementById(`edit-part-stock-${idx}`).value).replace(/[^0-9.-]/g, '')) || 0;
+
+    if(oldItemName === newItemName && oldCode === newCode && oldPartName === newPartName && oldChoice === newChoice && oldStock === newStock) {
+        editingMasterPartIdx = null;
+        renderMasterData();
+        return;
+    }
+
+    appData.masterParts[idx].itemName = newItemName;
+    appData.masterParts[idx].code = newCode;
+    appData.masterParts[idx].partName = newPartName;
+    appData.masterParts[idx].choice = newChoice;
+    appData.masterParts[idx].stock = newStock;
+    
+    editingMasterPartIdx = null;
+    saveDataToFirebase();
 }
-function deleteMasterPart(idx) { if(confirm("削除しますか？")) { appData.masterParts.splice(idx, 1); editingMasterPartIdx = null; saveDataToFirebase(); } }
 
-function addMasterUnit() { appData.masterUnits.push({ name: "新規ユニット" }); editingMasterUnitIdx = appData.masterUnits.length - 1; saveDataToFirebase(); }
-function editMasterUnit(idx) { editingMasterUnitIdx = idx; renderMasterData(); setTimeout(() => { document.getElementById(`edit-unit-${idx}`).focus(); }, 100); }
-function saveMasterUnit(idx) { appData.masterUnits[idx].name = document.getElementById(`edit-unit-${idx}`).value; editingMasterUnitIdx = null; saveDataToFirebase(); }
-function deleteMasterUnit(idx) { if(confirm("削除しますか？")) { appData.masterUnits.splice(idx, 1); editingMasterUnitIdx = null; saveDataToFirebase(); } }
+function deleteMasterPart(idx) { 
+    if(confirm("削除しますか？")) { 
+        appData.masterParts.splice(idx, 1); 
+        editingMasterPartIdx = null;
+        saveDataToFirebase(); 
+    } 
+}
 
-function addMailAddress() { if(!appData.mailSettings.emails) appData.mailSettings.emails = []; appData.mailSettings.emails.push(""); saveDataToFirebase(); }
-function updateMailAddress(idx, val) { appData.mailSettings.emails[idx] = val; saveDataToFirebase(); }
-function deleteMailAddress(idx) { appData.mailSettings.emails.splice(idx, 1); saveDataToFirebase(); }
-function updateMailSettings(key, val) { appData.mailSettings[key] = val; saveDataToFirebase(); }
+function addMasterUnit() { 
+    appData.masterUnits.push({ name: "新規ユニット" }); 
+    editingMasterUnitIdx = appData.masterUnits.length - 1;
+    saveDataToFirebase(); 
+}
+function editMasterUnit(idx) {
+    editingMasterUnitIdx = idx;
+    renderMasterData();
+    setTimeout(() => { document.getElementById(`edit-unit-${idx}`).focus(); }, 100);
+}
+function saveMasterUnit(idx) {
+    const oldVal = appData.masterUnits[idx].name;
+    const newVal = document.getElementById(`edit-unit-${idx}`).value;
+    if(oldVal === newVal) {
+        editingMasterUnitIdx = null;
+        renderMasterData();
+        return;
+    }
+    appData.masterUnits[idx].name = newVal;
+    editingMasterUnitIdx = null;
+    saveDataToFirebase();
+}
+function deleteMasterUnit(idx) { 
+    if(confirm("削除しますか？")) { 
+        appData.masterUnits.splice(idx, 1); 
+        editingMasterUnitIdx = null;
+        saveDataToFirebase(); 
+    } 
+}
+
+function addMailAddress() {
+    if(!appData.mailSettings.emails) appData.mailSettings.emails = [];
+    appData.mailSettings.emails.push("");
+    saveDataToFirebase();
+}
+function updateMailAddress(idx, val) { 
+    if(appData.mailSettings.emails[idx] === val) return;
+    appData.mailSettings.emails[idx] = val; 
+    saveDataToFirebase(); 
+}
+function deleteMailAddress(idx) {
+    appData.mailSettings.emails.splice(idx, 1);
+    saveDataToFirebase();
+}
+function updateMailSettings(key, val) { 
+    if(appData.mailSettings[key] === val) return;
+    appData.mailSettings[key] = val; 
+    saveDataToFirebase(); 
+}
 
 // ==========================================
 // 機種ボタン＆ドラッグアンドドロップ
@@ -936,25 +1044,48 @@ function updateMailSettings(key, val) { appData.mailSettings[key] = val; saveDat
 function renderParentButtons() {
     const container = document.getElementById("parent-button-list");
     container.innerHTML = `<span style="color:var(--text-sub); font-size:0.9rem; margin-right:4px;">■ 機種：</span>`;
+    
     if (!appData.parents) return;
     
     appData.parents.forEach((p, idx) => {
         if(p.isHidden) return; 
+
         const btn = document.createElement("button");
+        
         if (isCompareMode) {
             btn.className = "parent-btn" + (compareSelectedIds.has(p.id) ? " compare-selected" : "");
-            btn.onclick = () => { if(compareSelectedIds.has(p.id)) compareSelectedIds.delete(p.id); else compareSelectedIds.add(p.id); renderParentButtons(); renderMatrixCompareView(); };
+            btn.onclick = () => {
+                if(compareSelectedIds.has(p.id)) compareSelectedIds.delete(p.id);
+                else compareSelectedIds.add(p.id);
+                renderParentButtons();
+                renderMatrixCompareView();
+            };
         } else {
             btn.className = "parent-btn" + (p.id === appData.currentParentId ? " active" : "");
             btn.draggable = true;
             btn.onclick = () => { appData.currentParentId = p.id; saveDataToFirebase(); };
-            btn.ondragstart = (e) => { draggedParentIdx = idx; e.dataTransfer.effectAllowed = 'move'; setTimeout(() => btn.style.opacity = '0.4', 0); };
+
+            btn.ondragstart = (e) => {
+                draggedParentIdx = idx;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => btn.style.opacity = '0.4', 0);
+            };
             btn.ondragover = (e) => { e.preventDefault(); btn.classList.add('drag-over'); };
             btn.ondragleave = () => { btn.classList.remove('drag-over'); };
-            btn.ondrop = (e) => { e.preventDefault(); btn.classList.remove('drag-over'); if(draggedParentIdx === null || draggedParentIdx === idx) return; const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0]; appData.parents.splice(idx, 0, draggedItem); saveDataToFirebase(); };
+            btn.ondrop = (e) => {
+                e.preventDefault();
+                btn.classList.remove('drag-over');
+                if(draggedParentIdx === null || draggedParentIdx === idx) return;
+                const draggedItem = appData.parents.splice(draggedParentIdx, 1)[0];
+                appData.parents.splice(idx, 0, draggedItem);
+                saveDataToFirebase();
+            };
             btn.ondragend = () => { btn.style.opacity = '1'; draggedParentIdx = null; };
         }
-        btn.textContent = p.name; btn.title = p.name; container.appendChild(btn);
+        
+        btn.textContent = p.name;
+        btn.title = p.name;
+        container.appendChild(btn);
     });
 
     if (!isCompareMode) {
@@ -968,25 +1099,57 @@ function renderParentButtons() {
     }
 }
 
-function updateParentDate(key, val) { const curr = getCurrentParent(); if(!curr) return; curr[key] = val; document.getElementById(key === 'startDate' ? 'parent-start-date' : 'parent-end-date').value = val; saveDataToFirebase(); }
-function editCurrentParentName() { const curr = getCurrentParent(); if(!curr) return; const newName = prompt("機種名を変更:", curr.name); if(newName && newName.trim() && newName.trim() !== curr.name) { curr.name = newName.trim(); saveDataToFirebase(); } }
-function getCurrentParent() { if (!appData.parents) return null; const visibleParents = appData.parents.filter(p => !p.isHidden); return visibleParents.find(p => p.id === appData.currentParentId) || visibleParents[0]; }
+function updateParentDate(key, val) {
+    const curr = getCurrentParent();
+    if(!curr) return;
+    if(curr[key] === val) return;
+    curr[key] = val;
+    const inputId = key === 'startDate' ? 'parent-start-date' : 'parent-end-date';
+    document.getElementById(inputId).value = val;
+    saveDataToFirebase();
+}
+
+function editCurrentParentName() {
+    const curr = getCurrentParent();
+    if(!curr) return;
+    const newName = prompt("機種名を変更:", curr.name);
+    if(newName && newName.trim() && newName.trim() !== curr.name) { 
+        curr.name = newName.trim(); 
+        saveDataToFirebase(); 
+    }
+}
+
+function getCurrentParent() {
+    if (!appData.parents) return null;
+    const visibleParents = appData.parents.filter(p => !p.isHidden);
+    return visibleParents.find(p => p.id === appData.currentParentId) || visibleParents[0];
+}
+
 function addParent() {
     const parent = getCurrentParent();
-    if (parent && parent.parts && parent.parts.some(p => !p.locked)) return alert("編集中（未確定）のパーツがあるため、新規機種は追加できません。まずは確定してください。");
+    const isAnyEditing = parent && parent.parts && parent.parts.some(p => !p.locked);
+    if (isAnyEditing) {
+        alert("編集中（未確定）のパーツがあるため、新規機種は追加できません。まずは確定してください。");
+        return;
+    }
+
     const newName = prompt("新しい機種名を入力してください:");
     if (!newName || !newName.trim()) return;
-    appData.parents.push({ id: "p_" + Date.now(), name: newName.trim(), parts: [], startDate: "", endDate: "", isHidden: false });
-    appData.currentParentId = "p_" + Date.now();
+    const newId = "p_" + Date.now();
+    appData.parents.push({ id: newId, name: newName.trim(), parts: [], startDate: "", endDate: "", isHidden: false });
+    appData.currentParentId = newId;
     if(isCompareMode) toggleCompareMode();
     saveDataToFirebase();
 }
+
 function deleteCurrentParent() {
     const visibleParents = appData.parents.filter(p => !p.isHidden);
     if (visibleParents.length <= 1) return alert("表示できる最低1つの機種データが必要です。");
     if (!confirm("現在選択している機種を完全に削除しますか？")) return;
+    
     appData.parents = appData.parents.filter(p => p.id !== appData.currentParentId);
-    appData.currentParentId = appData.parents.filter(p => !p.isHidden)[0].id;
+    const newVisible = appData.parents.filter(p => !p.isHidden);
+    appData.currentParentId = newVisible[0].id;
     saveDataToFirebase();
 }
 
@@ -996,22 +1159,45 @@ function deleteCurrentParent() {
 function toggleCompareMode() {
     isCompareMode = !isCompareMode;
     const btn = document.getElementById('btn-compare');
+    
     if (isCompareMode) {
-        btn.textContent = "個別表示に戻す"; btn.className = "btn btn-compare-active";
-        document.getElementById('single-view').style.display = 'none'; document.getElementById('compare-view').style.display = 'block'; document.getElementById('date-settings-area').style.display = 'none'; document.getElementById('btn-edit-name').style.display = 'none'; document.getElementById('btn-add-parent').style.display = 'none'; document.getElementById('compare-instructions').style.display = 'block';
-        compareSelectedIds.clear(); appData.parents.filter(p => !p.isHidden).forEach(p => compareSelectedIds.add(p.id));
-        renderParentButtons(); renderMatrixCompareView();
+        btn.textContent = "個別表示に戻す";
+        btn.className = "btn btn-compare-active";
+        document.getElementById('single-view').style.display = 'none';
+        document.getElementById('compare-view').style.display = 'block';
+        document.getElementById('date-settings-area').style.display = 'none';
+        document.getElementById('btn-edit-name').style.display = 'none';
+        document.getElementById('btn-add-parent').style.display = 'none';
+        document.getElementById('compare-instructions').style.display = 'block';
+        
+        compareSelectedIds.clear();
+        appData.parents.filter(p => !p.isHidden).forEach(p => compareSelectedIds.add(p.id));
+        
+        renderParentButtons();
+        renderMatrixCompareView();
     } else {
-        btn.textContent = "並べて比較"; btn.className = "btn btn-outline";
-        document.getElementById('single-view').style.display = 'block'; document.getElementById('compare-view').style.display = 'none'; document.getElementById('date-settings-area').style.display = 'flex'; document.getElementById('btn-edit-name').style.display = 'block'; document.getElementById('btn-add-parent').style.display = 'block'; document.getElementById('compare-instructions').style.display = 'none';
-        renderParentButtons(); renderTable();
+        btn.textContent = "並べて比較";
+        btn.className = "btn btn-outline";
+        document.getElementById('single-view').style.display = 'block';
+        document.getElementById('compare-view').style.display = 'none';
+        document.getElementById('date-settings-area').style.display = 'flex';
+        document.getElementById('btn-edit-name').style.display = 'block';
+        document.getElementById('btn-add-parent').style.display = 'block';
+        document.getElementById('compare-instructions').style.display = 'none';
+        
+        renderParentButtons();
+        renderTable();
     }
 }
 
 function renderMatrixCompareView() {
     const container = document.getElementById("compare-view");
     container.innerHTML = "";
-    if (compareSelectedIds.size === 0) { container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">比較する機種を上部のボタンから選択してください。</div>`; return; }
+    
+    if (compareSelectedIds.size === 0) {
+        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">比較する機種を上部のボタンから選択してください。</div>`;
+        return;
+    }
 
     const selectedParents = appData.parents.filter(p => compareSelectedIds.has(p.id) && !p.isHidden);
     const uniquePartsMap = new Map();
@@ -1022,7 +1208,14 @@ function renderMatrixCompareView() {
             part.units.forEach(unit => {
                 const key = `${part.itemName}_${unit.name}_${unit.code}_${unit.partName}_${unit.choice}`;
                 if (!uniquePartsMap.has(key)) {
-                    uniquePartsMap.set(key, { itemName: part.itemName, unitName: unit.name, code: unit.code, partName: unit.partName, choice: unit.choice, models: {} });
+                    uniquePartsMap.set(key, {
+                        itemName: part.itemName,
+                        unitName: unit.name,
+                        code: unit.code,
+                        partName: unit.partName,
+                        choice: unit.choice,
+                        models: {}
+                    });
                 }
                 uniquePartsMap.get(key).models[p.id] = { insuu: unit.insuu || 1 };
             });
@@ -1031,26 +1224,62 @@ function renderMatrixCompareView() {
 
     const uniqueParts = Array.from(uniquePartsMap.values());
 
-    let html = `<div style="display:flex; justify-content:flex-end; margin-bottom:8px;"><button class="btn btn-excel" onclick="exportTableToCSV('#compare-table', '並べて比較.csv')">📥 CSV出力</button></div>
-                <div class="table-card" style="max-height:600px; overflow-y:auto;"><table id="compare-table"><thead style="position: sticky; top: 0; z-index: 10;">
-                <tr><th style="border-right:1px solid rgba(255,255,255,0.2); width:15%;">品名</th><th style="border-right:1px solid rgba(255,255,255,0.2); width:20%;">ユニット名</th><th style="border-right:1px solid rgba(255,255,255,0.2); width:15%;">品番コード</th><th style="border-right:1px solid rgba(255,255,255,0.2); width:20%;">品番名</th><th style="border-right:1px solid rgba(255,255,255,0.2); width:10%;">区分</th>`;
-    selectedParents.forEach(p => { html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#163c5a;" title="${p.name}">${p.name}<br><span style="font-size:0.75rem; font-weight:normal;">(員数)</span></th>`; });
+    let html = `
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button class="btn btn-excel" onclick="exportTableToCSV('#compare-table', '並べて比較.csv')">📥 CSV出力</button>
+        </div>
+        <div class="table-card" style="max-height:600px; overflow-y:auto;">
+            <table id="compare-table">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="border-right:1px solid rgba(255,255,255,0.2); width:15%;">品名</th>
+                        <th style="border-right:1px solid rgba(255,255,255,0.2); width:20%;">ユニット名</th>
+                        <th style="border-right:1px solid rgba(255,255,255,0.2); width:15%;">品番コード</th>
+                        <th style="border-right:1px solid rgba(255,255,255,0.2); width:20%;">品番名</th>
+                        <th style="border-right:1px solid rgba(255,255,255,0.2); width:10%;">区分</th>
+    `;
+    
+    selectedParents.forEach(p => {
+        html += `<th class="matrix-model-col" style="border-left:2px solid #fff; background-color:#163c5a;" title="${p.name}">
+                    ${p.name}<br><span style="font-size:0.75rem; font-weight:normal;">(員数)</span>
+                 </th>`;
+    });
+    
     html += `</tr></thead><tbody>`;
 
     if (uniqueParts.length === 0) {
         html += `<tr><td colspan="${5 + selectedParents.length}">登録されている部品データがありません。</td></tr>`;
     } else {
         uniqueParts.forEach(up => {
-            const choiceBadge = up.choice === 'new' ? '<span class="badge-choice type-new">新品</span>' : '<span class="badge-choice type-reuse">リユース</span>';
-            html += `<tr><td style="font-weight:bold;" title="${up.itemName || ''}">${up.itemName || ''}</td><td title="${up.unitName || ''}">${up.unitName || ''}</td><td title="${up.code || ''}">${up.code || ''}</td><td title="${up.partName || ''}">${up.partName || ''}</td><td>${choiceBadge}</td>`;
+            const choiceBadge = up.choice === 'new' 
+                ? '<span class="badge-choice type-new">新品</span>' 
+                : '<span class="badge-choice type-reuse">リユース</span>';
+                
+            html += `
+                <tr>
+                    <td style="font-weight:bold;" title="${up.itemName || ''}">${up.itemName || ''}</td>
+                    <td title="${up.unitName || ''}">${up.unitName || ''}</td>
+                    <td title="${up.code || ''}">${up.code || ''}</td>
+                    <td title="${up.partName || ''}">${up.partName || ''}</td>
+                    <td>${choiceBadge}</td>
+            `;
+            
             selectedParents.forEach(p => {
                 const mData = up.models[p.id];
-                if (mData) html += `<td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; font-size:1.1rem; font-weight:bold; color:var(--primary-navy);" title="${fmtNum(mData.insuu)}">${fmtNum(mData.insuu)}</td>`;
-                else html += `<td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; color:#ccc;">-</td>`;
+                if (mData) {
+                    html += `
+                        <td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; font-size:1.1rem; font-weight:bold; color:var(--primary-navy);" title="${fmtNum(mData.insuu)}">
+                            ${fmtNum(mData.insuu)}
+                        </td>
+                    `;
+                } else {
+                    html += `<td class="text-center matrix-model-col" style="border-left:2px solid #ebeef5; color:#ccc;">-</td>`;
+                }
             });
             html += `</tr>`;
         });
     }
+    
     html += `</tbody></table></div>`;
     container.innerHTML = html;
 }
@@ -1061,8 +1290,13 @@ function renderMatrixCompareView() {
 function toggleStockOnlyView() {
     isStockOnlyView = !isStockOnlyView;
     const btn = document.getElementById("btn-toggle-stockview");
-    if(isStockOnlyView) { btn.innerHTML = "👀 全体表示に戻す"; btn.className = "btn btn-compare-active"; } 
-    else { btn.innerHTML = "👀 在庫管理表のみ表示"; btn.className = "btn btn-outline"; }
+    if(isStockOnlyView) {
+        btn.innerHTML = "👀 全体表示に戻す";
+        btn.className = "btn btn-compare-active";
+    } else {
+        btn.innerHTML = "👀 在庫管理表のみ表示";
+        btn.className = "btn btn-outline";
+    }
     renderPlanScheduleView();
 }
 
@@ -1091,7 +1325,10 @@ function openArrivalModal(elem) {
     renderModalCommentList();
     
     document.getElementById("arrival-modal").style.display = "flex";
-    setTimeout(() => { document.getElementById("modal-arr-qty").focus(); document.getElementById("modal-arr-qty").select(); }, 100);
+    setTimeout(() => { 
+        document.getElementById("modal-arr-qty").focus(); 
+        document.getElementById("modal-arr-qty").select();
+    }, 100);
 }
 
 function closeArrivalModal() { document.getElementById("arrival-modal").style.display = "none"; }
@@ -1099,8 +1336,11 @@ function closeArrivalModal() { document.getElementById("arrival-modal").style.di
 function selectModalColor(color) {
     document.getElementById("modal-arr-color").value = color;
     document.querySelectorAll(".color-picker").forEach(el => {
-        if(el.getAttribute("data-color") === color) el.style.borderColor = "var(--text-main)";
-        else el.style.borderColor = (el.getAttribute("data-color") === "") ? "#ccc" : "transparent";
+        if(el.getAttribute("data-color") === color) {
+            el.style.borderColor = "var(--text-main)";
+        } else {
+            el.style.borderColor = (el.getAttribute("data-color") === "") ? "#ccc" : "transparent";
+        }
     });
 }
 
@@ -1108,18 +1348,32 @@ function addTempComment() {
     const d = document.getElementById("modal-new-comment-date").value;
     const t = document.getElementById("modal-new-comment-text").value.trim();
     if(!d || !t) return;
+    
     tempComments.push({ date: d, text: t });
     document.getElementById("modal-new-comment-text").value = "";
     renderModalCommentList();
 }
 
-function deleteTempComment(idx) { tempComments.splice(idx, 1); renderModalCommentList(); }
+function deleteTempComment(idx) {
+    tempComments.splice(idx, 1);
+    renderModalCommentList();
+}
 
 function renderModalCommentList() {
     const container = document.getElementById("modal-comment-list");
     container.innerHTML = "";
-    if(tempComments.length === 0) { container.innerHTML = "<span style='color:#999;'>コメント履歴はありません</span>"; return; }
-    tempComments.forEach((c, idx) => { container.innerHTML += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;"><div><strong style="color:var(--primary-navy);">${c.date}</strong> : ${c.text}</div><div style="color:red; cursor:pointer; font-weight:bold; padding:0 4px;" onclick="deleteTempComment(${idx})">✕</div></div>`; });
+    if(tempComments.length === 0) {
+        container.innerHTML = "<span style='color:#999;'>コメント履歴はありません</span>";
+        return;
+    }
+    tempComments.forEach((c, idx) => {
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc; padding:4px 0;">
+                <div><strong style="color:var(--primary-navy);">${c.date}</strong> : ${c.text}</div>
+                <div style="color:red; cursor:pointer; font-weight:bold; padding:0 4px;" onclick="deleteTempComment(${idx})">✕</div>
+            </div>
+        `;
+    });
 }
 
 function saveArrivalModal() {
@@ -1150,8 +1404,11 @@ function saveArrivalModal() {
 }
 
 function showShortageAlerts() {
-    if (window.currentShortages && window.currentShortages.length > 0) alert("【不足部品アラート】\n以下の日付で在庫が不足します：\n\n" + window.currentShortages.join("\n"));
-    else alert("現在、不足している部品はありません。");
+    if (window.currentShortages && window.currentShortages.length > 0) {
+        alert("【不足部品アラート】\n以下の日付で在庫が不足します：\n\n" + window.currentShortages.join("\n"));
+    } else {
+        alert("現在、不足している部品はありません。");
+    }
 }
 
 function renderPlanScheduleView() {
@@ -1164,78 +1421,158 @@ function renderPlanScheduleView() {
     
     appData.parents.forEach(p => {
         if(p.isHidden || !p.startDate || !p.endDate) return;
+        
         let reuseUnits = [];
-        if (p.parts) { p.parts.forEach(part => { part.units.forEach(unit => { if (unit.choice === 'reuse') reuseUnits.push(unit); }); }); }
+        if (p.parts) {
+            p.parts.forEach(part => {
+                part.units.forEach(unit => {
+                    if (unit.choice === 'reuse') reuseUnits.push(unit);
+                });
+            });
+        }
+        
         if (reuseUnits.length > 0) {
             planData.push({ parentName: p.name, startDate: p.startDate, endDate: p.endDate, units: reuseUnits });
-            let sd = new Date(p.startDate); let ed = new Date(p.endDate);
+            let sd = new Date(p.startDate);
+            let ed = new Date(p.endDate);
             if(!minDate || sd < minDate) minDate = new Date(sd);
             if(!maxDate || ed > maxDate) maxDate = new Date(ed);
         }
     });
 
-    if (planData.length === 0) { container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">リユース部品が設定されている、または使用期間（開始日・終了日）が設定されている表示対象の機種がありません。</div>`; return; }
+    if (planData.length === 0) {
+        container.innerHTML = `<div class="table-card" style="padding:40px; text-align:center; color:var(--text-sub);">リユース部品が設定されている、または使用期間（開始日・終了日）が設定されている表示対象の機種がありません。</div>`;
+        return;
+    }
 
     let start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
     let end = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0); 
     let dateList = [];
     let curr = new Date(start);
-    while(curr <= end) { dateList.push(new Date(curr)); curr.setDate(curr.getDate() + 1); }
+    while(curr <= end) {
+        dateList.push(new Date(curr));
+        curr.setDate(curr.getDate() + 1);
+    }
 
     let stockTrackingMap = new Map();
     appData.masterParts.forEach(m => {
-        if (m.choice === 'reuse' && m.code) { stockTrackingMap.set(m.code, { partName: m.partName, initialStock: m.stock || 0, runningStock: m.stock || 0 }); }
+        if (m.choice === 'reuse' && m.code) {
+            stockTrackingMap.set(m.code, { partName: m.partName, initialStock: m.stock || 0, runningStock: m.stock || 0 });
+        }
     });
 
     const youbi = ['日', '月', '火', '水', '木', '金', '土'];
     const stockBgHdr = '#2c3e50'; 
 
-    let html = `<div class="table-card" style="max-height: 700px; overflow-y: auto;"><table id="plan-table" class="plan-table"><thead style="position: sticky; top: 0; z-index: 10;"><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">カレンダー</th>`;
+    let html = `
+        <div class="table-card" style="max-height: 700px; overflow-y: auto;">
+            <table id="plan-table" class="plan-table">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">カレンダー</th>
+    `;
     
-    if(!isStockOnlyView) { planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);" title="${p.parentName}">${p.parentName} (必要数)</th>`; }); }
-    if(stockTrackingMap.size > 0) { html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">在庫管理表</th>`; }
+    if(!isStockOnlyView) {
+        planData.forEach(p => { html += `<th colspan="${p.units.length}" style="border-right:1px solid rgba(255,255,255,0.2);" title="${p.parentName}">${p.parentName} (必要数)</th>`; });
+    }
+    
+    if(stockTrackingMap.size > 0) {
+        html += `<th colspan="${stockTrackingMap.size * 3}" style="background-color:${stockBgHdr}; border-left:2px solid #fff;">在庫管理表</th>`;
+    }
+    
     html += `</tr><tr><th colspan="2" style="border-right:1px solid rgba(255,255,255,0.2);">品番コード</th>`;
     
-    if(!isStockOnlyView) { planData.forEach(p => { p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);" title="${u.code || ''}">${u.code || ''}</th>`; }); }); }
-    stockTrackingMap.forEach((v, code) => { html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;" title="${code} ${v.partName}">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`; });
+    if(!isStockOnlyView) {
+        planData.forEach(p => {
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2);" title="${u.code || ''}">${u.code || ''}</th>`; });
+        });
+    }
+    
+    stockTrackingMap.forEach((v, code) => {
+        html += `<th colspan="3" style="background-color:${stockBgHdr}; border-left:2px solid #fff;" title="${code} ${v.partName}">${code} <br><span style="font-size:0.75rem;">${v.partName}</span></th>`;
+    });
+    
     html += `</tr><tr><th style="min-width:90px; border-right:1px solid rgba(255,255,255,0.2);">年月日</th><th style="min-width:40px; border-right:1px solid rgba(255,255,255,0.2);">曜日</th>`;
     
-    if(!isStockOnlyView) { planData.forEach(p => { p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:60px;" title="${u.partName || ''}">${u.partName || ''}</th>`; }); }); }
-    stockTrackingMap.forEach((v, code) => { html += `<th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:45px;">使用</th><th style="background-color:${stockBgHdr}; color:#67c23a; border-left:1px solid rgba(255,255,255,0.2); width:50px; min-width:50px;">入庫</th><th style="background-color:${stockBgHdr}; color:#e6a23c; border-left:1px solid rgba(255,255,255,0.2); min-width:50px;">在庫</th>`; });
+    if(!isStockOnlyView) {
+        planData.forEach(p => {
+            p.units.forEach(u => { html += `<th style="border-right:1px solid rgba(255,255,255,0.2); min-width:60px;" title="${u.partName || ''}">${u.partName || ''}</th>`; });
+        });
+    }
+    
+    stockTrackingMap.forEach((v, code) => {
+        html += `
+            <th style="background-color:${stockBgHdr}; color:#f56c6c; border-left:2px solid #fff; min-width:45px;">使用</th>
+            <th style="background-color:${stockBgHdr}; color:#67c23a; border-left:1px solid rgba(255,255,255,0.2); width:50px; min-width:50px;">入庫</th>
+            <th style="background-color:${stockBgHdr}; color:#e6a23c; border-left:1px solid rgba(255,255,255,0.2); min-width:50px;">在庫</th>
+        `;
+    });
+    
     html += `</tr></thead><tbody>`;
             
     dateList.forEach(d => {
-        const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0');
-        const dateStr = `${yyyy}/${mm}/${dd}`; const yIdx = d.getDay(); const yStr = youbi[yIdx]; const isoDate = `${yyyy}-${mm}-${dd}`;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}/${mm}/${dd}`;
+        const yIdx = d.getDay();
+        const yStr = youbi[yIdx];
+        const isoDate = `${yyyy}-${mm}-${dd}`;
+        
         let rowClass = (yIdx === 0) ? 'day-sun' : (yIdx === 6) ? 'day-sat' : '';
         
-        html += `<tr class="${rowClass}"><td style="font-weight:bold; color:var(--text-sub);">${dateStr}</td><td style="font-weight:bold; color:var(--text-sub);">${yStr}</td>`;
+        html += `<tr class="${rowClass}">
+                    <td style="font-weight:bold; color:var(--text-sub);">${dateStr}</td>
+                    <td style="font-weight:bold; color:var(--text-sub);">${yStr}</td>`;
+        
         let dailyReqMap = new Map();
         
         planData.forEach(p => {
             const isStart = (p.startDate === isoDate);
             p.units.forEach(u => {
                 let reqQty = 0;
-                if (isStart) { reqQty = (u.insuu || 1) * (u.qty || 0); if (u.code) { let currentReq = dailyReqMap.get(u.code) || 0; dailyReqMap.set(u.code, currentReq + reqQty); } }
-                if(!isStockOnlyView) { if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;" title="${fmtNum(reqQty)}">${fmtNum(reqQty)}</td>`; else html += `<td></td>`; }
+                if (isStart) {
+                    reqQty = (u.insuu || 1) * (u.qty || 0);
+                    if (u.code) {
+                        let currentReq = dailyReqMap.get(u.code) || 0;
+                        dailyReqMap.set(u.code, currentReq + reqQty);
+                    }
+                }
+                if(!isStockOnlyView) {
+                    if (isStart) html += `<td style="font-weight:bold; color:#f56c6c; background-color:#fff0f0;" title="${fmtNum(reqQty)}">${fmtNum(reqQty)}</td>`;
+                    else html += `<td></td>`;
+                }
             });
         });
 
         stockTrackingMap.forEach((v, code) => {
             const req = dailyReqMap.get(code) || 0;
+            
             let arrVal = appData.arrivals && appData.arrivals[isoDate] && appData.arrivals[isoDate][code];
             let arrQty = 0, arrColor = "", arrComments = [];
-            if (arrVal) { arrQty = parseInt(arrVal.qty) || 0; arrColor = arrVal.color || ""; arrComments = arrVal.comments || []; }
-            v.runningStock += arrQty; v.runningStock -= req;
+            if (arrVal) {
+                arrQty = parseInt(arrVal.qty) || 0;
+                arrColor = arrVal.color || "";
+                arrComments = arrVal.comments || [];
+            }
+            
+            v.runningStock += arrQty;
+            v.runningStock -= req;
             
             const reqStr = req > 0 ? fmtNum(req) : '';
-            if (v.runningStock < 0 && req > 0) window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
+            if (v.runningStock < 0 && req > 0) {
+                window.currentShortages.push(`${dateStr} : ${v.partName} (不足 ${fmtNum(Math.abs(v.runningStock))} 個)`);
+            }
             
+            // 使用セル
             html += `<td style="border-left:2px solid #fff; text-align:center; color:#c9302c; font-weight:bold; background-color:${req>0 ? '#fde2e2' : 'transparent'};" title="${reqStr}">${reqStr}</td>`;
             
+            // 入庫セル
             let cellBgStyle = arrColor ? `background-color:${arrColor} !important;` : `background-color:transparent;`;
             let textColor = "#1f5078";
-            if (arrColor === "#ff4d4f" || arrColor === "#1890ff" || arrColor === "#faad14" || arrColor === "#8c8c8c") textColor = "#fff";
+            if (arrColor === "#ff4d4f" || arrColor === "#1890ff" || arrColor === "#faad14" || arrColor === "#8c8c8c") {
+                textColor = "#fff";
+            }
             
             let hasComment = arrComments.length > 0;
             let badge = hasComment ? `<div style="position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #f56c6c; border-left:8px solid transparent;"></div>` : "";
@@ -1243,14 +1580,22 @@ function renderPlanScheduleView() {
             let displayArr = arrQty !== 0 ? fmtNum(arrQty) : "";
             
             html += `<td style="border-left:1px solid #dcdfe6; border-right:1px solid #dcdfe6; position:relative; cursor:pointer; font-weight:bold; width:55px; text-align:center; color:${textColor} !important; ${cellBgStyle}" 
-                         data-date="${isoDate}" data-code="${code}" title="${titleText}" onclick="openArrivalModal(this)">${badge}${displayArr}</td>`;
-                         
+                         data-date="${isoDate}" data-code="${code}" title="${titleText}"
+                         onclick="openArrivalModal(this)">
+                         ${badge}
+                         ${displayArr}
+                     </td>`;
+                     
+            // 在庫セル
             const stockBg = v.runningStock < 0 ? '#ff4d4f' : 'transparent';
             const stockColor = v.runningStock < 0 ? '#fff' : '#1f5078';
+            
             html += `<td style="text-align:right; font-weight:bold; padding-right:8px; background-color:${stockBg}; color:${stockColor}; border-left:1px solid #fff;" title="${fmtNum(v.runningStock)}">${fmtNum(v.runningStock)}</td>`;
         });
+
         html += `</tr>`;
     });
+    
     html += `</tbody></table></div>`;
     container.innerHTML = html;
 }
@@ -1276,10 +1621,18 @@ function renderTable() {
     }
 
     const isAnyEditing = parent.parts.some(p => !p.locked);
+
     const btnAddPart = document.getElementById("btn-add-partgroup");
     if(btnAddPart) {
-        if(isAnyEditing) { btnAddPart.disabled = true; btnAddPart.style.opacity = "0.4"; btnAddPart.style.cursor = "not-allowed"; } 
-        else { btnAddPart.disabled = false; btnAddPart.style.opacity = "1"; btnAddPart.style.cursor = "pointer"; }
+        if(isAnyEditing) {
+            btnAddPart.disabled = true;
+            btnAddPart.style.opacity = "0.4";
+            btnAddPart.style.cursor = "not-allowed";
+        } else {
+            btnAddPart.disabled = false;
+            btnAddPart.style.opacity = "1";
+            btnAddPart.style.cursor = "pointer";
+        }
     }
 
     const uniqueItems = getUniqueItemNames();
@@ -1293,6 +1646,7 @@ function renderTable() {
         if (part.itemName && !uniqueItems.includes(part.itemName)) itemNameOptions += `<option value="${part.itemName}" selected>${part.itemName}</option>`;
 
         const linkedMasterParts = appData.masterParts.filter(m => m.itemName === part.itemName);
+
         let unitNameOptions = `<option value="">--選択--</option>`;
         appData.masterUnits.forEach(u => { unitNameOptions += `<option value="${u.name}">${u.name}</option>`; });
 
@@ -1302,6 +1656,7 @@ function renderTable() {
 
             if (uIdx === 0) {
                 const editDisabledAttr = (isAnyEditing && isLocked) ? 'disabled style="opacity:0.4; cursor:not-allowed;" title="他の品目を編集中です"' : '';
+                
                 tr.innerHTML += `
                     <td rowspan="${rowSpan}" style="vertical-align: top; padding-top: 12px; min-width: 140px;" title="${part.itemName || ''}">
                         <div style="display:flex; flex-direction:column; gap:10px;">
@@ -1310,7 +1665,10 @@ function renderTable() {
                             </select>
                             ${isLocked 
                                 ? `<button class="btn-unlock" onclick="toggleLock(${pIdx})" ${editDisabledAttr}>✏️ 編集</button>` 
-                                : `<div style="display:flex; gap:4px;"><button class="btn-lock" style="flex:1;" onclick="toggleLock(${pIdx})">🔒 確定</button><button class="btn-group-del" style="flex:1;" onclick="deletePartGroup(${pIdx})">削除</button></div>`
+                                : `<div style="display:flex; gap:4px;">
+                                       <button class="btn-lock" style="flex:1;" onclick="toggleLock(${pIdx})">🔒 確定</button>
+                                       <button class="btn-group-del" style="flex:1;" onclick="deletePartGroup(${pIdx})">削除</button>
+                                   </div>`
                             }
                         </div>
                     </td>
@@ -1358,9 +1716,11 @@ function renderTable() {
                 <td style="font-weight:bold; font-size: 0.95rem;" title="${fmtYen(appliedPrice)}">${fmtYen(appliedPrice)}</td>
                 <td style="font-weight:bold; font-size: 0.95rem;" title="${fmtYen(subTotal)}">${fmtYen(subTotal)}</td>
             `;
+
             tbody.appendChild(tr);
         });
     });
+
     calculateTotals();
 }
 
@@ -1375,29 +1735,43 @@ function addPartGroup() {
     const parent = getCurrentParent();
     if (!parent) return;
     if (!parent.parts) parent.parts = [];
-    if (parent.parts.some(p => !p.locked)) return alert("編集中（未確定）のパーツがあるため、追加できません。");
     
+    if (parent.parts.some(p => !p.locked)) {
+        alert("編集中（未確定）のパーツがあるため、追加できません。");
+        return;
+    }
+
     const defaultItem = appData.masterParts[0] ? appData.masterParts[0].itemName : "";
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
-    parent.parts.push({ itemName: defaultItem, locked: false, units: [{ name: defaultUnit, code: "", partName: "", choice: "new", insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }] });
+    
+    parent.parts.push({
+        itemName: defaultItem,
+        locked: false,
+        units: [{ name: defaultUnit, code: "", partName: "", choice: "new", insuu: 1, qty: 1, newPrice: 0, reusePrice: 0 }]
+    });
     
     const firstMatch = appData.masterParts.find(m => m.itemName === defaultItem);
-    if(firstMatch && firstMatch.choice) parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
-    saveDataToFirebase();
+    if(firstMatch && firstMatch.choice) {
+        parent.parts[parent.parts.length - 1].units[0].choice = firstMatch.choice;
+    }
     
-    if(isTutorialMode && currentTutStep === 5) setTimeout(nextTutStep, 300);
+    saveDataToFirebase();
 }
 
 function addUnitRow(pIdx) {
     const parent = getCurrentParent();
     if (!parent || !parent.parts[pIdx]) return;
     const defaultUnit = appData.masterUnits[0] ? appData.masterUnits[0].name : "";
+    
     const firstUnit = parent.parts[pIdx].units[0];
     const defaultChoice = firstUnit ? firstUnit.choice : "new";
     const defaultNewPrice = firstUnit ? firstUnit.newPrice : 0;
     const defaultReusePrice = firstUnit ? firstUnit.reusePrice : 0;
 
-    parent.parts[pIdx].units.push({ name: defaultUnit, code: "", partName: "", choice: defaultChoice, insuu: 1, qty: 1, newPrice: defaultNewPrice, reusePrice: defaultReusePrice });
+    parent.parts[pIdx].units.push({
+        name: defaultUnit, code: "", partName: "", choice: defaultChoice,
+        insuu: 1, qty: 1, newPrice: defaultNewPrice, reusePrice: defaultReusePrice 
+    });
     saveDataToFirebase();
 }
 
@@ -1417,10 +1791,10 @@ function updatePartGroup(pIdx, key, val) {
     if(key === 'itemName') {
         const firstMatch = appData.masterParts.find(m => m.itemName === val);
         parent.parts[pIdx].units.forEach(u => { 
-            u.code = ""; u.partName = ""; 
+            u.code = ""; 
+            u.partName = ""; 
             if(firstMatch && firstMatch.choice) u.choice = firstMatch.choice;
         });
-        if(isTutorialMode && currentTutStep === 6) setTimeout(nextTutStep, 300);
     }
     saveDataToFirebase();
 }
@@ -1436,12 +1810,20 @@ function updateLinkedPart(pIdx, uIdx, key, val) {
     unit[key] = val;
     if(key === 'code') {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.code === val);
-        if(match) { unit.partName = match.partName; unit.choice = match.choice || 'new'; } 
-        else if(val === "") { unit.partName = ""; }
+        if(match) {
+            unit.partName = match.partName;
+            unit.choice = match.choice || 'new';
+        } else if(val === "") {
+            unit.partName = "";
+        }
     } else if(key === 'partName') {
         const match = appData.masterParts.find(m => m.itemName === itemName && m.partName === val);
-        if(match) { unit.code = match.code; unit.choice = match.choice || 'new'; } 
-        else if(val === "") { unit.code = ""; }
+        if(match) {
+            unit.code = match.code;
+            unit.choice = match.choice || 'new';
+        } else if(val === "") {
+            unit.code = "";
+        }
     }
     saveDataToFirebase();
 }
@@ -1482,12 +1864,14 @@ function calculateTotals() {
     }
 
     let totalAllNew = 0; let totalCurrent = 0;
+
     parent.parts.forEach(part => {
         part.units.forEach(unit => {
             const totalQty = (unit.insuu || 1) * (unit.qty || 0);
             const costNew = (unit.newPrice || 0) * totalQty;
             const appliedPrice = (unit.choice === 'new') ? unit.newPrice : unit.reusePrice;
             const costCurrent = (appliedPrice || 0) * totalQty;
+            
             totalAllNew += costNew; totalCurrent += costCurrent;
         });
     });
